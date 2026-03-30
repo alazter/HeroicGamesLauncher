@@ -677,3 +677,58 @@ body.sweet-dark {
   --secondary-button: #ff9af7;
   --icons-background: #302530;
 }
+
+/* =========================================
+   HEROIC CUSTOM - CYAN THEME & ATMOSPHERE
+   ========================================= */
+body,
+:root {
+  /* 1.4: Background Profundo NATIVO (Usando a imagem real do PRD) */
+
+  /* DEFINIÇÃO DA IMAGEM DE FUNDO */
+  --gradient-body-background: url('/heroic_background.jpg') !important;
+
+  /* Aplicando a imagem com as configurações corretas de atmosfera */
+  background: var(--gradient-body-background) no-repeat center center fixed !important;
+  background-size: cover !important; /* Força a imagem a cobrir a tela toda sem distorcer */
+  background-color: #000000 !important; /* Fundo preto de segurança */
+
+  /* Forçando transparência nos painéis internos para a imagem aparecer */
+  --background: transparent !important;
+  --body-background: transparent !important;
+  --current-background: transparent !important;
+  --navbar-background: rgba(
+    2,
+    5,
+    7,
+    0.8
+  ) !important; /* Barra lateral semi-transparente */
+  --cardBg: rgba(8, 18, 26, 0.6) !important; /* Cards semi-transparentes */
+
+  /* 1.1: Mantendo o Ciano Neon para os destaques (isso ficou bom) */
+  --accent: #00ffff !important;
+  --brand-primary: #00ffff !important;
+  --primary: #00ffff !important;
+  --success: #00ffff !important;
+  --info: #00ffff !important;
+  --text-default: #ffffff !important;
+}
+
+/* 1.2 e 1.3: Arredondamento e Efeito Glow (mantemos, ficou ótimo) */
+button,
+.btn,
+[role='button'],
+article,
+.GameCard,
+div[data-testid='game-card'] {
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+button:hover,
+.btn:hover,
+.GameCard:hover,
+div[data-testid='game-card']:hover {
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.6) !important;
+  border-color: #00ffff !important;
+}

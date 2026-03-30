@@ -6,6 +6,7 @@ import SearchBar from '../SearchBar'
 import { useTranslation } from 'react-i18next'
 import LibraryContext from 'frontend/screens/Library/LibraryContext'
 import { normalizeTitle } from 'frontend/helpers/library'
+import AddGameButton from 'frontend/screens/Library/components/AddGameButton'
 
 function fixFilter(text: string) {
   const regex = new RegExp(/([?\\|*|+|(|)|[|]|])+/, 'g')
@@ -74,13 +75,27 @@ export default function LibrarySearchBar() {
   }
 
   return (
-    <div data-tour="library-search">
-      <SearchBar
-        suggestionsListItems={suggestions}
-        onInputChanged={onInputChanged}
-        value={filterText}
-        placeholder={t('search', 'Search for Games')}
-      />
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '15px',
+        width: '100%'
+      }}
+    >
+      <div data-tour="library-search" style={{ flexGrow: 1 }}>
+        <SearchBar
+          suggestionsListItems={suggestions}
+          onInputChanged={onInputChanged}
+          value={filterText}
+          placeholder={t('search', 'Search for Games')}
+        />
+      </div>
+
+      {/* Aqui está o nosso botão inserido ao lado da pesquisa */}
+      <div style={{ flexShrink: 0 }}>
+        <AddGameButton data-tour="library-add-game" />
+      </div>
     </div>
   )
 }

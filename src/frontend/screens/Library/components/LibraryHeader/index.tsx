@@ -35,7 +35,6 @@ export default React.memo(function LibraryHeader({ list }: Props) {
             ? t('favourites', 'Favourites')
             : t('title.allGames', 'All Games')}
           <span className="numberOfgames">{numberOfGames}</span>
-          <AddGameButton data-tour="library-add-game" />
         </span>
         <ActionIcons />
       </div>
