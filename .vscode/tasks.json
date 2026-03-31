@@ -38,6 +38,13 @@
       "command": "pnpm codecheck",
       "detail": "pnpm codecheck",
       "group": "test"
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "problemMatcher": [],
+      "label": "npm: start",
+      "detail": "electron-vite dev --watch"
     }
   ]
 }

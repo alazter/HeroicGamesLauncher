@@ -732,3 +732,26 @@ div[data-testid='game-card']:hover {
   box-shadow: 0 0 12px rgba(0, 255, 255, 0.6) !important;
   border-color: #00ffff !important;
 }
+
+/* =========================================
+   HEROIC CUSTOM - ALFABETO NO HORIZONTE
+   ========================================= */
+.custom-alphabet-wrapper > div,
+.custom-alphabet-wrapper ul,
+.custom-alphabet-wrapper nav,
+.custom-alphabet-wrapper [class*='Alphabet'] {
+  display: flex !important;
+  flex-wrap: nowrap !important; /* PROÍBE A QUEBRA DE LINHA */
+  justify-content: space-between !important; /* ESPALHA AS LETRAS POR TODO O HORIZONTE */
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Garante que os botões das letras fiquem compactos para caberem todos */
+.custom-alphabet-wrapper button {
+  min-width: unset !important;
+  padding: 2px 6px !important;
+  flex-shrink: 1 !important;
+}

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import LibraryContext from 'frontend/screens/Library/LibraryContext'
 import { normalizeTitle } from 'frontend/helpers/library'
 import AddGameButton from 'frontend/screens/Library/components/AddGameButton'
+import ActionIcons from 'frontend/components/UI/ActionIcons'
 
 function fixFilter(text: string) {
   const regex = new RegExp(/([?\\|*|+|(|)|[|]|])+/, 'g')
@@ -83,7 +84,26 @@ export default function LibrarySearchBar() {
         width: '100%'
       }}
     >
-      <div data-tour="library-search" style={{ flexGrow: 1 }}>
+      {/* INJEÇÃO DIRETA DE CSS: A opção nuclear para esticar a barra de busca */}
+      <style>
+        {`
+          [data-tour="library-search"] {
+            width: 680px !important;
+            min-width: 680px !important;
+            flex-grow: 0 !important;
+          }
+          [data-tour="library-search"] > div,
+          [data-tour="library-search"] form,
+          [data-tour="library-search"] input {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 680px !important; /* Força o input a esticar */
+          }
+        `}
+      </style>
+
+      {/* Barra de Pesquisa */}
+      <div data-tour="library-search">
         <SearchBar
           suggestionsListItems={suggestions}
           onInputChanged={onInputChanged}
@@ -92,9 +112,19 @@ export default function LibrarySearchBar() {
         />
       </div>
 
-      {/* Aqui está o nosso botão inserido ao lado da pesquisa */}
-      <div style={{ flexShrink: 0 }}>
+      {/* ÁREA DIREITA: Botão Ciano de Adicionar Jogo + Todos os 6 ícones */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          flexShrink: 0,
+          marginLeft:
+            'auto' /* Garante que os botões grudem no canto direito da tela */
+        }}
+      >
         <AddGameButton data-tour="library-add-game" />
+        <ActionIcons />
       </div>
     </div>
   )
