@@ -21,6 +21,26 @@ const RUNNER_TO_STORE: Partial<Record<Runner, string>> = {
   zoom: 'Zoom'
 }
 
+// =========================================================================
+// CONFIGURAÇÃO DA BARRA DE PLATAFORMAS (PRD 3.1)
+// =========================================================================
+
+// 1. MODO DE EXIBIÇÃO: Escolha entre 'icon-text' | 'icon-only' | 'text-only'
+const DISPLAY_MODE = 'icon-text'
+
+// 2. LISTA DE LOJAS (Agora preparada para imagens PNG)
+// NOTA: Estes caminhos (ex: '/images/epic.png') são exemplos.
+// Na Fase 2, eles virão dinamicamente das configurações do usuário.
+const PLATFORMS_LIST = [
+  { id: 'epic', name: 'Epic Games', iconPath: '/images/epic.png' },
+  { id: 'gog', name: 'GOG', iconPath: '/images/gog.png' },
+  { id: 'amazon', name: 'Amazon', iconPath: '/images/amazon.png' },
+  { id: 'zoom', name: 'Zoom', iconPath: '/images/zoom.png' },
+  { id: 'sideloaded', name: 'Sideloaded', iconPath: '/images/sideloaded.png' },
+  { id: 'steam', name: 'Steam', iconPath: '/images/steam.png' }
+]
+// =========================================================================
+
 export default function LibrarySearchBar() {
   const { epic, gog, sideloadedLibrary, amazon, zoom } =
     useContext(ContextProvider)
@@ -79,17 +99,18 @@ export default function LibrarySearchBar() {
     <div
       style={{
         display: 'flex',
-        alignItems: 'center',
-        gap: '15px',
-        width: '100%'
+        flexDirection: 'column',
+        gap: '20px',
+        width: '100%',
+        boxSizing: 'border-box'
       }}
     >
-      {/* INJEÇÃO DIRETA DE CSS: A opção nuclear para esticar a barra de busca */}
+      {/* INJEÇÃO DIRETA DE CSS */}
       <style>
         {`
           [data-tour="library-search"] {
-            width: 680px !important;
-            min-width: 680px !important;
+            width: 450px !important;
+            min-width: 450px !important;
             flex-grow: 0 !important;
           }
           [data-tour="library-search"] > div,
@@ -97,34 +118,106 @@ export default function LibrarySearchBar() {
           [data-tour="library-search"] input {
             width: 100% !important;
             max-width: 100% !important;
-            min-width: 680px !important; /* Força o input a esticar */
+            min-width: 450px !important;
           }
         `}
       </style>
 
-      {/* Barra de Pesquisa */}
-      <div data-tour="library-search">
-        <SearchBar
-          suggestionsListItems={suggestions}
-          onInputChanged={onInputChanged}
-          value={filterText}
-          placeholder={t('search', 'Search for Games')}
-        />
-      </div>
-
-      {/* ÁREA DIREITA: Botão Ciano de Adicionar Jogo + Todos os 6 ícones */}
+      {/* ==========================================
+          LINHA 1: BARRA DE BUSCA E ÍCONES 
+          ========================================== */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          flexShrink: 0,
-          marginLeft:
-            'auto' /* Garante que os botões grudem no canto direito da tela */
+          gap: '15px',
+          width: '100%'
         }}
       >
-        <AddGameButton data-tour="library-add-game" />
-        <ActionIcons />
+        <div data-tour="library-search">
+          <SearchBar
+            suggestionsListItems={suggestions}
+            onInputChanged={onInputChanged}
+            value={filterText}
+            placeholder={t('search', 'Search for Games')}
+          />
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexShrink: 0,
+            marginLeft: 'auto'
+          }}
+        >
+          <AddGameButton data-tour="library-add-game" />
+          <ActionIcons />
+        </div>
+      </div>
+
+      {/* ==========================================
+          LINHA 2: BARRA DE PLATAFORMAS (PRD 3.1)
+          ========================================== */}
+      <div
+        className="platforms-bar"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'flex-start',
+          gap: '12px',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
+        {PLATFORMS_LIST.map((platform) => (
+          <button
+            key={platform.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: DISPLAY_MODE === 'icon-only' ? '8px 12px' : '8px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              fontSize: '14px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'background-color 0.2s ease',
+              flexShrink: 0
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                'rgba(255, 255, 255, 0.15)')
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                'rgba(255, 255, 255, 0.05)')
+            }
+          >
+            {/* Lógica de Renderização Baseada na Escolha (AGORA COM IMAGENS) */}
+            {(DISPLAY_MODE === 'icon-text' || DISPLAY_MODE === 'icon-only') && (
+              <img
+                src={platform.iconPath}
+                alt={platform.name}
+                style={{ width: '18px', height: '18px', objectFit: 'contain' }}
+                /* O onError abaixo esconde a imagem temporariamente se o arquivo .png ainda não existir na pasta */
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            )}
+
+            {(DISPLAY_MODE === 'icon-text' || DISPLAY_MODE === 'text-only') && (
+              <span>{platform.name}</span>
+            )}
+          </button>
+        ))}
       </div>
     </div>
   )
