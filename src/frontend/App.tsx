@@ -163,6 +163,10 @@ const router = createHashRouter([
         lazy: makeLazyFunc(import('./screens/Accessibility'))
       },
       {
+        path: 'personalization',
+        lazy: makeLazyFunc(import('./screens/Personalization'))
+      },
+      {
         path: '*',
         element: <Navigate replace to="/" />
       }

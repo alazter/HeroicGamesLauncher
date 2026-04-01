@@ -10,7 +10,7 @@ export const cyanDeepTheme: DefaultTheme = {
 
     // Fundo (Simulando o gradiente escuro)
     background: '#04090c', // Um azul muito escuro quase preto
-    navbar: '#020507', // Um tom mais escuro para a barra lateral
+    navbar: '#14404C', // Um tom mais escuro para a barra lateral
     cardBg: '#08121a', // Fundo dos cartões um pouco mais claro
 
     // Textos

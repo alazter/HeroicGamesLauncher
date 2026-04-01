@@ -8,7 +8,8 @@ import {
   faCoffee,
   faUserAlt,
   faWineGlass,
-  faBarsProgress
+  faBarsProgress,
+  faPaintBrush
 } from '@fortawesome/free-solid-svg-icons'
 import { useLocation } from 'react-router-dom'
 import { useContext } from 'react'
@@ -103,14 +104,7 @@ export default function SidebarLinks() {
 
   return (
     <div className="SidebarLinks Sidebar__section" data-tour="sidebar-menu">
-      {!loggedIn && (
-        <SidebarItem
-          icon={faUser}
-          label={t('button.login', 'Login')}
-          url="/login"
-          dataTour="sidebar-login"
-        />
-      )}
+      {/* 1. BIBLIOTECA */}
       <SidebarItem
         isActiveFallback={location.pathname.includes('gamepage')}
         url="/"
@@ -120,42 +114,15 @@ export default function SidebarLinks() {
         dataTour="sidebar-library"
       />
 
-      <div className="SidebarItemWithSubmenu">
-        <SidebarItem
-          isActiveFallback={location.pathname.includes('store')}
-          url={`/store/${defaultStore}`}
-          icon={faStore}
-          label={t('stores', 'Stores')}
-          dataTour="sidebar-stores"
-        />
-        {inWebviewScreen && (
-          <div className="SidebarSubmenu">
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/epic"
-              label={t('store', 'Epic Store')}
-            />
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/gog"
-              label={t('gog-store', 'GOG Store')}
-            />
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/amazon"
-              label={t('amazon-luna', 'Amazon Luna')}
-            />
-            {zoom.enabled && (
-              <SidebarItem
-                className="SidebarLinks__subItem"
-                url="/store/zoom"
-                label={t('zoom-store', 'Zoom Store')}
-              />
-            )}
-          </div>
-        )}
-      </div>
-      <div className="divider" />
+      {/* 2. PERSONALIZAÇÃO */}
+      <SidebarItem
+        url="/personalization"
+        icon={faPaintBrush}
+        label="Personalização"
+        dataTour="sidebar-personalization"
+      />
+
+      {/* 3. CONFIGURAÇÕES */}
       <div className="SidebarItemWithSubmenu">
         <SidebarItem
           isActiveFallback={location.pathname.includes('settings')}
@@ -211,22 +178,55 @@ export default function SidebarLinks() {
           </div>
         )}
       </div>
-      <SidebarItem
-        url="/download-manager"
-        icon={faBarsProgress}
-        label={t('download-manager.link', 'Downloads')}
-        dataTour="sidebar-downloads"
-      />
 
-      {!isWin && (
+      <div className="divider" />
+
+      {/* 4. LOJAS */}
+      <div className="SidebarItemWithSubmenu">
         <SidebarItem
-          url="/wine-manager"
-          icon={faWineGlass}
-          label={t('wine.manager.link', 'Wine Manager')}
-          dataTour="sidebar-wine"
+          isActiveFallback={location.pathname.includes('store')}
+          url={`/store/${defaultStore}`}
+          icon={faStore}
+          label={t('stores', 'Stores')}
+          dataTour="sidebar-stores"
+        />
+        {inWebviewScreen && (
+          <div className="SidebarSubmenu">
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/epic"
+              label={t('store', 'Epic Store')}
+            />
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/gog"
+              label={t('gog-store', 'GOG Store')}
+            />
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/amazon"
+              label={t('amazon-luna', 'Amazon Luna')}
+            />
+            {zoom.enabled && (
+              <SidebarItem
+                className="SidebarLinks__subItem"
+                url="/store/zoom"
+                label={t('zoom-store', 'Zoom Store')}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 5. CONECTE-SE / GERENCIAR CONTAS */}
+      {!loggedIn && (
+        <SidebarItem
+          icon={faUser}
+          label={t('button.login', 'Login')}
+          url="/login"
+          dataTour="sidebar-login"
         />
       )}
-
       {loggedIn && (
         <SidebarItem
           url="/login"
@@ -236,6 +236,25 @@ export default function SidebarLinks() {
         />
       )}
 
+      {/* 6. DOWNLOADS */}
+      <SidebarItem
+        url="/download-manager"
+        icon={faBarsProgress}
+        label={t('download-manager.link', 'Downloads')}
+        dataTour="sidebar-downloads"
+      />
+
+      {/* 7. WINE MANAGER (Só aparece se não for Windows) */}
+      {!isWin && (
+        <SidebarItem
+          url="/wine-manager"
+          icon={faWineGlass}
+          label={t('wine.manager.link', 'Wine Manager')}
+          dataTour="sidebar-wine"
+        />
+      )}
+
+      {/* 8. ACESSIBILIDADE */}
       <SidebarItem
         url="/accessibility"
         icon={faUniversalAccess}
@@ -245,6 +264,7 @@ export default function SidebarLinks() {
 
       <div className="divider" />
 
+      {/* 9. DOCUMENTAÇÃO E COMUNIDADE */}
       <SidebarItem
         url="/wiki"
         icon={faBookOpen}
