@@ -1,238 +1,259 @@
-import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import React, { useState, useEffect } from 'react'
+
+interface CustomStore {
+  id: string
+  name: string
+  icon: string | null
+}
 
 export default function PersonalizationScreen() {
-  const { t } = useTranslation()
+  const [bgImage, setBgImage] = useState<string | null>(() => {
+    return localStorage.getItem('heroic_custom_bg')
+  })
 
-  // Estes 'estados' vão guardar as imagens temporariamente para mostrar o preview na tela
-  const [epicIcon, setEpicIcon] = useState<string | null>(null)
-  const [gogIcon, setGogIcon] = useState<string | null>(null)
-  const [amazonIcon, setAmazonIcon] = useState<string | null>(null)
-
-  // Função que lê o arquivo escolhido e cria uma URL temporária para o preview
-  const handleImageUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setIcon: React.Dispatch<React.SetStateAction<string | null>>
-  ) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const imageUrl = URL.createObjectURL(file)
-      setIcon(imageUrl)
+  const [stores, setStores] = useState<CustomStore[]>(() => {
+    const saved = localStorage.getItem('heroic_custom_stores')
+    if (saved) {
+      try {
+        return JSON.parse(saved) as CustomStore[]
+      } catch (err) {
+        console.error('Erro ao ler stores:', err)
+      }
     }
+    return [
+      { id: 'epic', name: 'Epic Games', icon: null },
+      { id: 'gog', name: 'GOG', icon: null }
+    ]
+  })
+
+  useEffect(() => {
+    localStorage.setItem('heroic_custom_stores', JSON.stringify(stores))
+    window.dispatchEvent(new Event('customStoresChanged'))
+  }, [stores])
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = reader.result as string
+      setBgImage(base64)
+      localStorage.setItem('heroic_custom_bg', base64)
+      window.dispatchEvent(new Event('customBgChanged'))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleIconUpload = (
+    id: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = reader.result as string
+      setStores((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, icon: base64 } : s))
+      )
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const moveUp = (index: number) => {
+    if (index === 0) return
+    const newStores = [...stores]
+    const temp = newStores[index]
+    newStores[index] = newStores[index - 1]
+    newStores[index - 1] = temp
+    setStores(newStores)
+  }
+
+  const moveDown = (index: number) => {
+    if (index === stores.length - 1) return
+    const newStores = [...stores]
+    const temp = newStores[index]
+    newStores[index] = newStores[index + 1]
+    newStores[index + 1] = temp
+    setStores(newStores)
   }
 
   return (
     <div
-      data-tour="personalization-screen"
       style={{
-        padding: '40px',
-        color: 'var(--text-default)',
+        position: 'relative',
+        height: '100%',
         width: '100%',
-        overflowY: 'auto'
+        color: '#fff',
+        overflow: 'hidden'
       }}
     >
-      {/* Cabeçalho da Tela */}
-      <h1
-        style={{
-          borderBottom: '1px solid var(--body-divider)',
-          paddingBottom: '10px'
-        }}
-      >
-        Personalização da Biblioteca
-      </h1>
-      <p style={{ marginBottom: '30px', color: 'var(--text-muted)' }}>
-        Aqui você pode alterar os ícones das plataformas. Selecione imagens de
-        sua preferência no formato PNG.
-      </p>
-
-      {/* Lista de Plataformas */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* --- CARTÃO: EPIC GAMES --- */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            background: 'var(--background-darker)',
-            padding: '20px',
-            borderRadius: '8px',
-            border: '1px solid var(--body-divider)'
-          }}
-        >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              background: epicIcon ? 'transparent' : 'var(--background)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px dashed var(--text-muted)'
-            }}
-          >
-            {epicIcon ? (
-              <img
-                src={epicIcon}
-                alt="Epic Preview"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-            ) : (
-              <span
-                style={{
-                  fontSize: '12px',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                Sem Ícone
-              </span>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>Epic Games</h3>
-            <input
-              type="file"
-              accept=".png"
-              onChange={(e) => handleImageUpload(e, setEpicIcon)}
-              style={{ color: 'var(--text-default)' }}
-            />
-          </div>
-        </div>
-
-        {/* --- CARTÃO: GOG --- */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            background: 'var(--background-darker)',
-            padding: '20px',
-            borderRadius: '8px',
-            border: '1px solid var(--body-divider)'
-          }}
-        >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              background: gogIcon ? 'transparent' : 'var(--background)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px dashed var(--text-muted)'
-            }}
-          >
-            {gogIcon ? (
-              <img
-                src={gogIcon}
-                alt="GOG Preview"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-            ) : (
-              <span
-                style={{
-                  fontSize: '12px',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                Sem Ícone
-              </span>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>GOG</h3>
-            <input
-              type="file"
-              accept=".png"
-              onChange={(e) => handleImageUpload(e, setGogIcon)}
-              style={{ color: 'var(--text-default)' }}
-            />
-          </div>
-        </div>
-
-        {/* --- CARTÃO: AMAZON GAMES --- */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            background: 'var(--background-darker)',
-            padding: '20px',
-            borderRadius: '8px',
-            border: '1px solid var(--body-divider)'
-          }}
-        >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              background: amazonIcon ? 'transparent' : 'var(--background)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px dashed var(--text-muted)'
-            }}
-          >
-            {amazonIcon ? (
-              <img
-                src={amazonIcon}
-                alt="Amazon Preview"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-            ) : (
-              <span
-                style={{
-                  fontSize: '12px',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                Sem Ícone
-              </span>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 10px 0' }}>Amazon Games</h3>
-            <input
-              type="file"
-              accept=".png"
-              onChange={(e) => handleImageUpload(e, setAmazonIcon)}
-              style={{ color: 'var(--text-default)' }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Botão de Salvar no final */}
       <div
         style={{
-          marginTop: '40px',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: bgImage ? `url(${bgImage})` : 'none',
+          backgroundColor: bgImage ? 'transparent' : '#121212',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(5px) brightness(0.7)',
+          zIndex: 0
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          width: '420px',
+          bottom: '20px',
+          background: 'rgba(20, 20, 20, 0.85)',
+          backdropFilter: 'blur(15px)',
+          borderRadius: '16px',
+          padding: '24px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          zIndex: 2,
           display: 'flex',
-          justifyContent: 'flex-end'
+          flexDirection: 'column',
+          gap: '20px',
+          overflowY: 'auto'
         }}
       >
-        <button
+        <h2>Personalização</h2>
+        <div>
+          <span
+            style={{
+              fontSize: '12px',
+              color: '#aaa',
+              textTransform: 'uppercase'
+            }}
+          >
+            Fundo Global
+          </span>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255,255,255,0.05)',
+              padding: '15px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              marginTop: '10px',
+              border: '1px dashed rgba(255,255,255,0.2)'
+            }}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleBgUpload}
+              style={{ display: 'none' }}
+            />
+            <span>Trocar Imagem</span>
+          </label>
+        </div>
+        <div
           style={{
-            padding: '12px 24px',
-            cursor: 'pointer',
-            background: 'var(--accent)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '16px',
-            fontWeight: 'bold'
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            paddingTop: '20px'
           }}
-          onClick={() => alert('Em breve vamos programar essa função!')}
         >
-          Salvar Ícones
-        </button>
+          <span
+            style={{
+              fontSize: '12px',
+              color: '#aaa',
+              textTransform: 'uppercase'
+            }}
+          >
+            Lojas
+          </span>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              marginTop: '10px'
+            }}
+          >
+            {stores.map((store, index) => (
+              <div
+                key={store.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: 'rgba(0,0,0,0.4)',
+                  padding: '10px',
+                  borderRadius: '8px'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <button
+                    onClick={() => moveUp(index)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveDown(index)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ▼
+                  </button>
+                </div>
+                <div
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {store.icon && (
+                    <img
+                      src={store.icon}
+                      alt=""
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  )}
+                </div>
+                <span style={{ flex: 1 }}>{store.name}</span>
+                <label
+                  style={{
+                    cursor: 'pointer',
+                    padding: '5px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept=".png"
+                    onChange={(e) => handleIconUpload(store.id, e)}
+                    style={{ display: 'none' }}
+                  />
+                  <span>📷</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

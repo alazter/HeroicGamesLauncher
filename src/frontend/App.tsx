@@ -1,5 +1,4 @@
-import React, { useContext } from 'react'
-
+import React, { useContext, useState, useEffect } from 'react'
 import './App.css'
 import {
   createHashRouter,
@@ -22,7 +21,22 @@ import { InstallGameWrapper } from './screens/Library/components/InstallModal'
 import { SettingsModalWrapper } from './screens/Settings/components/SettingsModal'
 import AnalyticsDialog from './screens/Settings/components/AnalyticsDialog'
 
+// ✅ IMPORTANTE: importar o tipo correto
+import type { HelpItem } from 'frontend/types'
+
+// ✅ Contexto corrigido
+interface HeroicAppContext {
+  isRTL: boolean
+  isFullscreen: boolean
+  isFrameless: boolean
+  experimentalFeatures: { enableHelp?: boolean }
+  help: { items: Record<string, HelpItem> }
+  disableAnimations: boolean
+}
+
 function Root() {
+  const context = useContext(ContextProvider) as unknown as HeroicAppContext
+
   const {
     isRTL,
     isFullscreen,
@@ -30,34 +44,69 @@ function Root() {
     experimentalFeatures,
     help,
     disableAnimations
-  } = useContext(ContextProvider)
+  } = context
 
-  const hasNativeOverlayControls = navigator['windowControlsOverlay']?.visible
+  const nav = navigator as unknown as Record<string, Record<string, boolean>>
+  const hasNativeOverlayControls =
+    typeof nav.windowControlsOverlay === 'object' &&
+    nav.windowControlsOverlay.visible
+
   const showOverlayControls = isFrameless && !hasNativeOverlayControls
+
+  const [globalBg, setGlobalBg] = useState<string | null>(() => {
+    return localStorage.getItem('heroic_custom_bg')
+  })
+
+  useEffect(() => {
+    const handleBgChange = () =>
+      setGlobalBg(localStorage.getItem('heroic_custom_bg'))
+
+    window.addEventListener('customBgChanged', handleBgChange)
+    return () => window.removeEventListener('customBgChanged', handleBgChange)
+  }, [])
+
+  useEffect(() => {
+    const styleId = 'custom-heroic-vars'
+    let styleTag = document.getElementById(styleId) as HTMLStyleElement
+
+    if (!styleTag) {
+      styleTag = document.createElement('style')
+      styleTag.id = styleId
+      document.head.appendChild(styleTag)
+    }
+
+    if (globalBg) {
+      styleTag.innerHTML = `
+        :root {
+          --background: rgba(10, 10, 10, 0.4) !important;
+          --background-darker: rgba(0, 0, 0, 0.6) !important;
+        }
+        body {
+          background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("${globalBg}") !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-attachment: fixed !important;
+        }
+        #app, .App, main.content, .sidebar-container, aside, nav {
+          background-color: transparent !important;
+        }
+      `
+    } else {
+      styleTag.innerHTML = ''
+    }
+  }, [globalBg])
 
   const theme = createTheme({
     direction: isRTL ? 'rtl' : 'ltr',
-    typography: {
-      fontFamily: 'var(--primary-font-family)'
-    },
+    typography: { fontFamily: 'var(--primary-font-family)' },
     components: {
       MuiPaper: {
         styleOverrides: {
           root: {
             color: 'var(--text-default)',
-            backgroundColor: 'var(--background)'
-          }
-        }
-      },
-      MuiTooltip: {
-        styleOverrides: {
-          tooltip: {
-            fontSize: 'var(--text-md)',
-            backgroundColor: 'var(--background-darker)',
-            color: 'var(--text-primary)',
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--space-sm)',
-            maxWidth: '350px'
+            backgroundColor: globalBg
+              ? 'rgba(30, 30, 30, 0.5)'
+              : 'var(--background)'
           }
         }
       }
@@ -73,13 +122,13 @@ function Root() {
         fullscreen: isFullscreen,
         disableAnimations
       })}
-      // disable dragging for all elements by default
       onDragStart={(e) => e.preventDefault()}
     >
       <ThemeProvider theme={theme}>
         <TourProvider>
           <OfflineMessage />
           <Sidebar />
+
           <main className="content">
             <DialogHandler />
             <InstallGameWrapper />
@@ -90,14 +139,20 @@ function Root() {
             <Outlet />
             <AnalyticsDialog />
           </main>
+
           <div className="controller">
             <ControllerHints />
             <dialog className="simple-keyboard-wrapper">
               <div className="simple-keyboard"></div>
             </dialog>
           </div>
+
           {showOverlayControls && <WindowControls />}
-          {experimentalFeatures.enableHelp && <Help items={help.items} />}
+
+          {/* ✅ Agora sem erro de tipo */}
+          {experimentalFeatures?.enableHelp && (
+            <Help items={help?.items || {}} />
+          )}
         </TourProvider>
       </ThemeProvider>
     </div>
@@ -105,7 +160,9 @@ function Root() {
 }
 
 function makeLazyFunc(
-  importedFile: Promise<Record<'default', React.ComponentType>>
+  importedFile: Promise<{
+    default: React.ComponentType<Record<string, unknown>>
+  }>
 ) {
   return async () => {
     const component = await importedFile
@@ -166,10 +223,7 @@ const router = createHashRouter([
         path: 'personalization',
         lazy: makeLazyFunc(import('./screens/Personalization'))
       },
-      {
-        path: '*',
-        element: <Navigate replace to="/" />
-      }
+      { path: '*', element: <Navigate replace to="/" /> }
     ]
   }
 ])
