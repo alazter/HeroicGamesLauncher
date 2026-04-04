@@ -148,7 +148,7 @@ export default function PersonalizationScreen() {
               textTransform: 'uppercase'
             }}
           >
-            Fundo Global
+            Background 1860x950
           </span>
           <label
             style={{
