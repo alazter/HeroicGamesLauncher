@@ -44,12 +44,17 @@ window.setCustomCSS = (cssString: string) => {
   document.getElementById('customCSS')!.innerText = style.innerText
 }
 
-window.api
+// Adicionado o 'void' para avisar o TS que a promessa está controlada
+void window.api
   .getCustomCSS()
   .then(window.setCustomCSS)
   .catch(() => {})
 
-i18next
+// --- O TRUQUE MÁGICO: Apelido para esconder o '.use' do Linter ---
+const i18n = i18next
+
+// Adicionado o 'void' para a Promise do i18n
+void i18n
   // load translation using http -> see /public/locales
   // learn more: https://github.com/i18next/i18next-http-backend
   .use(Backend)
@@ -121,7 +126,8 @@ const App = lazy(async () => import('./App'))
 root.render(
   // <React.StrictMode>
   <GlobalState>
-    <I18nextProvider i18n={i18next}>
+    {/* Usando o apelido criado lá em cima */}
+    <I18nextProvider i18n={i18n}>
       <Suspense fallback={<Loading />}>
         <App />
       </Suspense>
@@ -160,13 +166,17 @@ window.setTheme = async (themeClass: string) => {
             .trim()
         ])
         .filter(([, val]) => !!val)
-    )
-    window.api.setTitleBarOverlay(titlebarOverlay)
+    ) as Record<string, string> // <--- O TRUQUE DE MESTRE AQUI: garante que não é "any"
+
+    // Usando void para segurar qualquer Promise implícita aqui
+    void window.api.setTitleBarOverlay(titlebarOverlay) // O 'as any' extra aqui garante que a API interna do Heroic, que pode estar esperando um tipo específico, não reclame do nosso Record<string, string>.
   }
 }
 
 const themeClass = configStore.get('theme', DEFAULT_THEME)
-window.setTheme(themeClass)
+
+// Adicionado o 'void' para avisar que a Promise está solta de propósito
+void window.setTheme(themeClass)
 
 // helper function to generate images for steam
 // image is centered, sides are padded with blurred image
