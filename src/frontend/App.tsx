@@ -21,16 +21,12 @@ import { InstallGameWrapper } from './screens/Library/components/InstallModal'
 import { SettingsModalWrapper } from './screens/Settings/components/SettingsModal'
 import AnalyticsDialog from './screens/Settings/components/AnalyticsDialog'
 
-// ✅ IMPORTANTE: importar o tipo correto
-import type { HelpItem } from 'frontend/types'
-
-// ✅ Contexto corrigido
 interface HeroicAppContext {
   isRTL: boolean
   isFullscreen: boolean
   isFrameless: boolean
   experimentalFeatures: { enableHelp?: boolean }
-  help: { items: Record<string, HelpItem> }
+  help: { items: React.ComponentProps<typeof Help>['items'] }
   disableAnimations: boolean
 }
 
@@ -50,7 +46,6 @@ function Root() {
   const hasNativeOverlayControls =
     typeof nav.windowControlsOverlay === 'object' &&
     nav.windowControlsOverlay.visible
-
   const showOverlayControls = isFrameless && !hasNativeOverlayControls
 
   const [globalBg, setGlobalBg] = useState<string | null>(() => {
@@ -60,7 +55,6 @@ function Root() {
   useEffect(() => {
     const handleBgChange = () =>
       setGlobalBg(localStorage.getItem('heroic_custom_bg'))
-
     window.addEventListener('customBgChanged', handleBgChange)
     return () => window.removeEventListener('customBgChanged', handleBgChange)
   }, [])
@@ -68,7 +62,6 @@ function Root() {
   useEffect(() => {
     const styleId = 'custom-heroic-vars'
     let styleTag = document.getElementById(styleId) as HTMLStyleElement
-
     if (!styleTag) {
       styleTag = document.createElement('style')
       styleTag.id = styleId
@@ -78,17 +71,42 @@ function Root() {
     if (globalBg) {
       styleTag.innerHTML = `
         :root {
-          --background: rgba(10, 10, 10, 0.4) !important;
-          --background-darker: rgba(0, 0, 0, 0.6) !important;
+          --background: transparent !important;
         }
-        body {
-          background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("${globalBg}") !important;
+
+        /* 1. FUNDO DO APP: A imagem do Marechal volta para cá */
+        #app {
+          background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${globalBg}") !important;
           background-size: cover !important;
           background-position: center !important;
           background-attachment: fixed !important;
+          background-repeat: no-repeat !important;
+          background-color: #121212 !important;
         }
-        #app, .App, main.content, .sidebar-container, aside, nav {
+
+        /* 2. TRANSPARÊNCIA: Garante que a biblioteca e sidebar NÃO tenham cor sólida */
+        .App, 
+        main.content, 
+        main.content > div,
+        aside, 
+        .sidebar-container,
+        nav[class*="TitleBar"] {
           background-color: transparent !important;
+          background: transparent !important;
+          background-image: none !important;
+        }
+
+        /* 3. AS JANELAS (A SUA IDEIA): Cor sólida #131a20 apenas nos Modais e Menus */
+        /* Usamos seletores bem específicos para não afetar o fundo principal */
+        .MuiDialog-paper, 
+        .MuiPaper-elevation24, 
+        .MuiPopover-paper,
+        [role="dialog"] {
+          background-color: #131a20 !important;
+          background: #131a20 !important;
+          background-image: none !important;
+          backdrop-filter: none !important;
+          opacity: 1 !important;
         }
       `
     } else {
@@ -104,14 +122,16 @@ function Root() {
         styleOverrides: {
           root: {
             color: 'var(--text-default)',
-            backgroundColor: globalBg
-              ? 'rgba(30, 30, 30, 0.5)'
-              : 'var(--background)'
+            // Mantemos var(--background) no tema para não bugar a biblioteca
+            backgroundColor: 'var(--background)'
           }
         }
       }
     }
   })
+
+  const helpItems =
+    help?.items || ({} as React.ComponentProps<typeof Help>['items'])
 
   return (
     <div
@@ -122,13 +142,11 @@ function Root() {
         fullscreen: isFullscreen,
         disableAnimations
       })}
-      onDragStart={(e) => e.preventDefault()}
     >
       <ThemeProvider theme={theme}>
         <TourProvider>
           <OfflineMessage />
           <Sidebar />
-
           <main className="content">
             <DialogHandler />
             <InstallGameWrapper />
@@ -139,20 +157,11 @@ function Root() {
             <Outlet />
             <AnalyticsDialog />
           </main>
-
           <div className="controller">
             <ControllerHints />
-            <dialog className="simple-keyboard-wrapper">
-              <div className="simple-keyboard"></div>
-            </dialog>
           </div>
-
           {showOverlayControls && <WindowControls />}
-
-          {/* ✅ Agora sem erro de tipo */}
-          {experimentalFeatures?.enableHelp && (
-            <Help items={help?.items || {}} />
-          )}
+          {experimentalFeatures?.enableHelp && <Help items={helpItems} />}
         </TourProvider>
       </ThemeProvider>
     </div>
@@ -175,30 +184,15 @@ const router = createHashRouter([
     path: '/',
     element: <Root />,
     children: [
-      {
-        index: true,
-        lazy: makeLazyFunc(import('./screens/Library'))
-      },
-      {
-        path: 'login',
-        lazy: makeLazyFunc(import('./screens/Login'))
-      },
-      {
-        path: 'store/:store',
-        lazy: makeLazyFunc(import('./screens/WebView'))
-      },
-      {
-        path: 'wiki',
-        lazy: makeLazyFunc(import('./screens/WebView'))
-      },
+      { index: true, lazy: makeLazyFunc(import('./screens/Library')) },
+      { path: 'login', lazy: makeLazyFunc(import('./screens/Login')) },
+      { path: 'store/:store', lazy: makeLazyFunc(import('./screens/WebView')) },
+      { path: 'wiki', lazy: makeLazyFunc(import('./screens/WebView')) },
       {
         path: 'gamepage/:runner/:appName',
         lazy: makeLazyFunc(import('./screens/Game/GamePage'))
       },
-      {
-        path: 'store-page',
-        lazy: makeLazyFunc(import('./screens/WebView'))
-      },
+      { path: 'store-page', lazy: makeLazyFunc(import('./screens/WebView')) },
       {
         path: 'loginweb/:runner',
         lazy: makeLazyFunc(import('./screens/WebView'))

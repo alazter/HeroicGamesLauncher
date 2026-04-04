@@ -60,6 +60,25 @@ export default function PersonalizationScreen() {
     reader.readAsDataURL(file)
   }
 
+  const handleNameChange = (id: string, newName: string) => {
+    setStores((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, name: newName } : s))
+    )
+  }
+
+  const handleAddStore = () => {
+    const newStore: CustomStore = {
+      id: 'store-' + Date.now(),
+      name: 'Nova Loja',
+      icon: null
+    }
+    setStores((prev) => [...prev, newStore])
+  }
+
+  const handleRemoveStore = (id: string) => {
+    setStores((prev) => prev.filter((s) => s.id !== id))
+  }
+
   const moveUp = (index: number) => {
     if (index === 0) return
     const newStores = [...stores]
@@ -106,10 +125,10 @@ export default function PersonalizationScreen() {
           position: 'absolute',
           top: '20px',
           left: '20px',
-          width: '420px',
+          width: '450px',
           bottom: '20px',
-          background: 'rgba(20, 20, 20, 0.85)',
-          backdropFilter: 'blur(15px)',
+          background:
+            '#131a20' /* A SUA COR HEX AQUI: Fundo sólido para leitura */,
           borderRadius: '16px',
           padding: '24px',
           border: '1px solid rgba(255,255,255,0.1)',
@@ -150,7 +169,7 @@ export default function PersonalizationScreen() {
               onChange={handleBgUpload}
               style={{ display: 'none' }}
             />
-            <span>Trocar Imagem</span>
+            <span style={{ fontWeight: 'bold' }}>Trocar Imagem de Fundo</span>
           </label>
         </div>
         <div
@@ -166,7 +185,7 @@ export default function PersonalizationScreen() {
               textTransform: 'uppercase'
             }}
           >
-            Lojas
+            Gerenciar Lojas
           </span>
           <div
             style={{
@@ -185,7 +204,8 @@ export default function PersonalizationScreen() {
                   gap: '10px',
                   background: 'rgba(0,0,0,0.4)',
                   padding: '10px',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.05)'
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -233,11 +253,24 @@ export default function PersonalizationScreen() {
                     />
                   )}
                 </div>
-                <span style={{ flex: 1 }}>{store.name}</span>
+                <input
+                  type="text"
+                  value={store.name}
+                  onChange={(e) => handleNameChange(store.id, e.target.value)}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    outline: 'none',
+                    padding: '6px',
+                    borderRadius: '4px'
+                  }}
+                />
                 <label
                   style={{
                     cursor: 'pointer',
-                    padding: '5px',
+                    padding: '6px',
                     background: 'rgba(255,255,255,0.1)',
                     borderRadius: '4px'
                   }}
@@ -250,9 +283,40 @@ export default function PersonalizationScreen() {
                   />
                   <span>📷</span>
                 </label>
+                <button
+                  onClick={() => handleRemoveStore(store.id)}
+                  style={{
+                    background: '#ff4444',
+                    border: 'none',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Deletar
+                </button>
               </div>
             ))}
           </div>
+          <button
+            onClick={handleAddStore}
+            style={{
+              background: '#4CAF50',
+              border: 'none',
+              color: '#fff',
+              padding: '12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              width: '100%',
+              marginTop: '20px',
+              fontWeight: 'bold',
+              fontSize: '14px'
+            }}
+          >
+            + Adicionar Loja
+          </button>
         </div>
       </div>
     </div>
