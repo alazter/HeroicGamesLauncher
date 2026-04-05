@@ -74,7 +74,7 @@ function Root() {
           --background: transparent !important;
         }
 
-        /* 1. FUNDO DO APP: A imagem do Marechal volta para cá */
+        /* 1. O CAMPEÃO: Background 100% aplicado no container principal */
         #app {
           background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${globalBg}") !important;
           background-size: cover !important;
@@ -84,20 +84,42 @@ function Root() {
           background-color: #121212 !important;
         }
 
-        /* 2. TRANSPARÊNCIA: Garante que a biblioteca e sidebar NÃO tenham cor sólida */
+        /* 2. TRANSPARÊNCIA DA ESTRUTURA GERAL */
         .App, 
         main.content, 
         main.content > div,
-        aside, 
-        .sidebar-container,
-        nav[class*="TitleBar"] {
+        nav[class*="TitleBar"],
+        .window-controls {
           background-color: transparent !important;
           background: transparent !important;
           background-image: none !important;
         }
 
-        /* 3. AS JANELAS (A SUA IDEIA): Cor sólida #131a20 apenas nos Modais e Menus */
-        /* Usamos seletores bem específicos para não afetar o fundo principal */
+        /* ========================================================= */
+        /* CORREÇÃO DO CABEÇALHO ("Todos os jogos")                  */
+        /* ========================================================= */
+        main.content h1, 
+        main.content h2, 
+        main.content [class*="Header"],
+        main.content [class*="Title"],
+        .library-header,
+        .library-header > div {
+          background-color: transparent !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        /* ========================================================= */
+        /* BARRA LATERAL COM CINZA SEMI-TRANSPARENTE                 */
+        /* ========================================================= */
+        aside, 
+        .sidebar-container {
+          background-color: rgba(30, 34, 40, 0.6) !important; /* Cinza escuro com 60% de opacidade */
+          background: rgba(30, 34, 40, 0.6) !important;
+          backdrop-filter: blur(8px) !important; /* Efeito de vidro */
+        }
+
+        /* 3. JANELAS SÓLIDAS EM #131a20 */
         .MuiDialog-paper, 
         .MuiPaper-elevation24, 
         .MuiPopover-paper,
@@ -107,6 +129,26 @@ function Root() {
           background-image: none !important;
           backdrop-filter: none !important;
           opacity: 1 !important;
+        }
+
+        /* ========================================================= */
+        /* AJUSTES CIRÚRGICOS (17 E ÍCONE ATIVO)                     */
+        /* ========================================================= */
+
+        /* A) O número 17 (Quantidade de jogos) */
+        .numberOfgames {
+          --input-background: rgba(255, 255, 255, 0.15) !important;
+          background: rgba(255, 255, 255, 0.15) !important;
+          background-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* B) Fundo do ícone ativo na barra lateral */
+        #app aside .active,
+        #app .sidebar-container .active,
+        #app aside [aria-current="page"] {
+          background-color: rgba(255, 255, 255, 0.08) !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-radius: 8px !important;
         }
       `
     } else {
@@ -122,8 +164,7 @@ function Root() {
         styleOverrides: {
           root: {
             color: 'var(--text-default)',
-            // Mantemos var(--background) no tema para não bugar a biblioteca
-            backgroundColor: 'var(--background)'
+            backgroundColor: globalBg ? '#131a20' : 'var(--background)'
           }
         }
       }

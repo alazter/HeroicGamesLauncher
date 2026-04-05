@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { memo, useContext, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GameInfo } from 'common/types'
 import LibraryContext from '../../LibraryContext'
@@ -9,7 +9,7 @@ type Props = {
   list: GameInfo[]
 }
 
-export default React.memo(function LibraryHeader({ list }: Props) {
+export default memo(function LibraryHeader({ list }: Props) {
   const { t } = useTranslation()
   const { showFavourites, showAlphabetFilter } = useContext(LibraryContext)
 
