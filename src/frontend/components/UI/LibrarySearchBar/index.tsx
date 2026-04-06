@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ContextProvider from 'frontend/state/ContextProvider'
 import { GameInfo, Runner } from 'common/types'
@@ -21,25 +21,14 @@ const RUNNER_TO_STORE: Partial<Record<Runner, string>> = {
   zoom: 'Zoom'
 }
 
-// =========================================================================
-// CONFIGURAÇÃO DA BARRA DE PLATAFORMAS (PRD 3.1)
-// =========================================================================
-
-// 1. MODO DE EXIBIÇÃO: Escolha entre 'icon-text' | 'icon-only' | 'text-only'
 const DISPLAY_MODE = 'icon-text'
 
-// 2. LISTA DE LOJAS (Agora preparada para imagens PNG)
-// NOTA: Estes caminhos (ex: '/images/epic.png') são exemplos.
-// Na Fase 2, eles virão dinamicamente das configurações do usuário.
-const PLATFORMS_LIST = [
-  { id: 'epic', name: 'Epic Games', iconPath: '/images/epic.png' },
-  { id: 'gog', name: 'GOG', iconPath: '/images/gog.png' },
-  { id: 'amazon', name: 'Amazon', iconPath: '/images/amazon.png' },
-  { id: 'zoom', name: 'Zoom', iconPath: '/images/zoom.png' },
-  { id: 'sideloaded', name: 'Sideloaded', iconPath: '/images/sideloaded.png' },
-  { id: 'steam', name: 'Steam', iconPath: '/images/steam.png' }
-]
-// =========================================================================
+interface CustomStore {
+  id: string
+  name: string
+  icon: string | null
+  isVisible?: boolean
+}
 
 export default function LibrarySearchBar() {
   const { epic, gog, sideloadedLibrary, amazon, zoom } =
@@ -47,6 +36,54 @@ export default function LibrarySearchBar() {
   const { handleSearch, filterText } = useContext(LibraryContext)
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  // =========================================================
+  // SISTEMA DINÂMICO DE LOJAS E FILTRO ATIVO
+  // =========================================================
+  const [customStores, setCustomStores] = useState<CustomStore[]>(() => {
+    const saved = localStorage.getItem('heroic_custom_stores')
+    if (saved) return JSON.parse(saved) as CustomStore[]
+
+    return [
+      { id: 'epic', name: 'Epic Games', icon: null, isVisible: true },
+      { id: 'gog', name: 'GOG', icon: null, isVisible: true },
+      { id: 'amazon', name: 'Amazon', icon: null, isVisible: true },
+      { id: 'zoom', name: 'Zoom', icon: null, isVisible: true },
+      { id: 'sideloaded', name: 'Sideloaded', icon: null, isVisible: true },
+      { id: 'steam', name: 'Steam', icon: null, isVisible: true }
+    ]
+  })
+
+  // Estado que guarda qual loja está clicada no momento
+  const [activeFilter, setActiveFilter] = useState<string | null>(() => {
+    return localStorage.getItem('heroic_active_store_filter')
+  })
+
+  useEffect(() => {
+    const handleStoresChange = () => {
+      const saved = localStorage.getItem('heroic_custom_stores')
+      if (saved) setCustomStores(JSON.parse(saved) as CustomStore[])
+    }
+    window.addEventListener('customStoresChanged', handleStoresChange)
+    return () =>
+      window.removeEventListener('customStoresChanged', handleStoresChange)
+  }, [])
+
+  // Função que é disparada ao clicar numa loja
+  const handleFilterClick = (storeId: string) => {
+    const newFilter = activeFilter === storeId ? null : storeId // Se clicar na mesma, desmarca
+    setActiveFilter(newFilter)
+
+    if (newFilter) {
+      localStorage.setItem('heroic_active_store_filter', newFilter)
+    } else {
+      localStorage.removeItem('heroic_active_store_filter')
+    }
+
+    // Grita para a lista de jogos atualizar
+    window.dispatchEvent(new Event('heroicFilterChanged'))
+  }
+  // =========================================================
 
   const normalizedFilterText = useMemo(
     () => normalizeTitle(fixFilter(filterText)),
@@ -91,10 +128,6 @@ export default function LibrarySearchBar() {
     </li>
   ))
 
-  const onInputChanged = (text: string) => {
-    handleSearch(text)
-  }
-
   return (
     <div
       style={{
@@ -105,27 +138,13 @@ export default function LibrarySearchBar() {
         boxSizing: 'border-box'
       }}
     >
-      {/* INJEÇÃO DIRETA DE CSS */}
       <style>
         {`
-          [data-tour="library-search"] {
-            width: 450px !important;
-            min-width: 450px !important;
-            flex-grow: 0 !important;
-          }
-          [data-tour="library-search"] > div,
-          [data-tour="library-search"] form,
-          [data-tour="library-search"] input {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 450px !important;
-          }
+          [data-tour="library-search"] { width: 450px !important; min-width: 450px !important; flex-grow: 0 !important; }
+          [data-tour="library-search"] > div, [data-tour="library-search"] form, [data-tour="library-search"] input { width: 100% !important; max-width: 100% !important; min-width: 450px !important; }
         `}
       </style>
 
-      {/* ==========================================
-          LINHA 1: BARRA DE BUSCA E ÍCONES 
-          ========================================== */}
       <div
         style={{
           display: 'flex',
@@ -137,12 +156,11 @@ export default function LibrarySearchBar() {
         <div data-tour="library-search">
           <SearchBar
             suggestionsListItems={suggestions}
-            onInputChanged={onInputChanged}
+            onInputChanged={(text) => handleSearch(text)}
             value={filterText}
             placeholder={t('search', 'Search for Games')}
           />
         </div>
-
         <div
           style={{
             display: 'flex',
@@ -157,9 +175,7 @@ export default function LibrarySearchBar() {
         </div>
       </div>
 
-      {/* ==========================================
-          LINHA 2: BARRA DE PLATAFORMAS (PRD 3.1)
-          ========================================== */}
+      {/* BARRA DE PLATAFORMAS INTERATIVA */}
       <div
         className="platforms-bar"
         style={{
@@ -172,52 +188,60 @@ export default function LibrarySearchBar() {
           boxSizing: 'border-box'
         }}
       >
-        {PLATFORMS_LIST.map((platform) => (
-          <button
-            key={platform.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: DISPLAY_MODE === 'icon-only' ? '8px 12px' : '8px 16px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#fff',
-              fontSize: '14px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'background-color 0.2s ease',
-              flexShrink: 0
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.backgroundColor =
-                'rgba(255, 255, 255, 0.15)')
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.backgroundColor =
-                'rgba(255, 255, 255, 0.05)')
-            }
-          >
-            {/* Lógica de Renderização Baseada na Escolha (AGORA COM IMAGENS) */}
-            {(DISPLAY_MODE === 'icon-text' || DISPLAY_MODE === 'icon-only') && (
-              <img
-                src={platform.iconPath}
-                alt={platform.name}
-                style={{ width: '18px', height: '18px', objectFit: 'contain' }}
-                /* O onError abaixo esconde a imagem temporariamente se o arquivo .png ainda não existir na pasta */
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-            )}
+        {customStores
+          .filter((store) => store.isVisible !== false)
+          .map((store) => {
+            const imageSource = store.icon
+              ? store.icon
+              : `/images/${store.id}.png`
+            const isActive = activeFilter === store.id // Verifica se este é o botão filtrado
 
-            {(DISPLAY_MODE === 'icon-text' || DISPLAY_MODE === 'text-only') && (
-              <span>{platform.name}</span>
-            )}
-          </button>
-        ))}
+            return (
+              <button
+                key={store.id}
+                onClick={() => handleFilterClick(store.id)} // Adicionado o evento de clique!
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding:
+                    DISPLAY_MODE === 'icon-only' ? '8px 12px' : '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: isActive
+                    ? 'rgba(76, 175, 80, 0.2)'
+                    : 'rgba(255, 255, 255, 0.05)', // Fica verde se estiver ativo
+                  border: isActive
+                    ? '1px solid #4CAF50'
+                    : '1px solid rgba(255, 255, 255, 0.1)', // Borda verde se estiver ativo
+                  color: isActive ? '#4CAF50' : '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
+                }}
+              >
+                {(DISPLAY_MODE === 'icon-text' ||
+                  DISPLAY_MODE === 'icon-only') && (
+                  <img
+                    src={imageSource}
+                    alt={store.name}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      objectFit: 'contain'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
+                {(DISPLAY_MODE === 'icon-text' ||
+                  DISPLAY_MODE === 'text-only') && <span>{store.name}</span>}
+              </button>
+            )
+          })}
       </div>
     </div>
   )

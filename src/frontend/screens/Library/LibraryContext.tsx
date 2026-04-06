@@ -1,4 +1,4 @@
-import React from 'react'
+import { createContext } from 'react'
 
 import { GameInfo } from 'common/types'
 import { LibraryContextType } from 'frontend/types'
@@ -45,4 +45,4 @@ const initialContext: LibraryContextType = {
   gamesForAlphabetFilter: [] as GameInfo[]
 }
 
-export default React.createContext(initialContext)
+export default createContext(initialContext)

@@ -1,12 +1,14 @@
 import './index.css'
 
-import React, {
+import {
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useLayoutEffect
+  useLayoutEffect,
+  useCallback,
+  memo
 } from 'react'
 
 import ArrowDropUp from '@mui/icons-material/ArrowDropUp'
@@ -35,7 +37,6 @@ import { hasHelp } from 'frontend/hooks/hasHelp'
 import EmptyLibraryMessage from './components/EmptyLibrary'
 import CategoriesManager from './components/CategoriesManager'
 import LibraryTour from './components/LibraryTour'
-import AlphabetFilter from './components/AlphabetFilter'
 import { openInstallGameModal } from 'frontend/state/InstallGameModal'
 
 const storage = window.localStorage
@@ -46,7 +47,7 @@ type SearchableGame = {
   normalizedTitle: string
 }
 
-export default React.memo(function Library(): JSX.Element {
+export default memo(function Library(): JSX.Element {
   const { t } = useTranslation()
 
   const {
@@ -79,14 +80,11 @@ export default React.memo(function Library(): JSX.Element {
     setLayout(layout)
   }
 
-  let initialStoresfilters
+  let initialStoresfilters: StoresFilters
   const storesFiltersString = storage.getItem('storesFilters')
   if (storesFiltersString) {
-    // If we have something stored, use that
     initialStoresfilters = JSON.parse(storesFiltersString) as StoresFilters
   } else {
-    // Else, use the old `category` filter
-    // TODO: we can remove this eventually after a few releases and just use the code of the if
     const storedCategory = (storage.getItem('category') as Category) || 'all'
     initialStoresfilters = {
       legendary: epicCategories.includes(storedCategory),
@@ -105,16 +103,13 @@ export default React.memo(function Library(): JSX.Element {
     setStoresFilters_(newFilters)
   }
 
-  let initialPlatformsfilters
+  let initialPlatformsfilters: PlatformsFilters
   const plaformsFiltersString = storage.getItem('platformsFilters')
   if (plaformsFiltersString) {
-    // If we have something stored, use that
     initialPlatformsfilters = JSON.parse(
       plaformsFiltersString
     ) as PlatformsFilters
   } else {
-    // Else, use the old `category` filter
-    // TODO: we can remove this eventually after a few releases and just use the code of the if
     const storedCategory = storage.getItem('filterPlatform') || 'all'
     initialPlatformsfilters = {
       win: ['all', 'win'].includes(storedCategory),
@@ -135,56 +130,61 @@ export default React.memo(function Library(): JSX.Element {
 
   const [filterText, setFilterText] = useState('')
 
-  const [showHidden, setShowHidden] = useState(
-    JSON.parse(storage.getItem('show_hidden') || 'false')
+  const [showHidden, setShowHidden] = useState<boolean>(
+    JSON.parse(storage.getItem('show_hidden') || 'false') as boolean
   )
   const handleShowHidden = (value: boolean) => {
     storage.setItem('show_hidden', JSON.stringify(value))
     setShowHidden(value)
   }
 
-  const [showFavouritesLibrary, setShowFavourites] = useState(
-    JSON.parse(storage.getItem('show_favorites') || 'false')
+  const [showFavouritesLibrary, setShowFavourites] = useState<boolean>(
+    JSON.parse(storage.getItem('show_favorites') || 'false') as boolean
   )
   const handleShowFavourites = (value: boolean) => {
     storage.setItem('show_favorites', JSON.stringify(value))
     setShowFavourites(value)
   }
 
-  const [showInstalledOnly, setShowInstalledOnly] = useState(
-    JSON.parse(storage.getItem('show_installed_only') || 'false')
+  const [showInstalledOnly, setShowInstalledOnly] = useState<boolean>(
+    JSON.parse(storage.getItem('show_installed_only') || 'false') as boolean
   )
   const handleShowInstalledOnly = (value: boolean) => {
     storage.setItem('show_installed_only', JSON.stringify(value))
     setShowInstalledOnly(value)
   }
 
-  const [showNonAvailable, setShowNonAvailable] = useState(
-    JSON.parse(storage.getItem('show_non_available') || 'true')
+  const [showNonAvailable, setShowNonAvailable] = useState<boolean>(
+    JSON.parse(storage.getItem('show_non_available') || 'true') as boolean
   )
   const handleShowNonAvailable = (value: boolean) => {
     storage.setItem('show_non_available', JSON.stringify(value))
     setShowNonAvailable(value)
   }
 
-  const [showSupportOfflineOnly, setSupportOfflineOnly] = useState(
-    JSON.parse(storage.getItem('show_support_offline_only') || 'false')
+  const [showSupportOfflineOnly, setSupportOfflineOnly] = useState<boolean>(
+    JSON.parse(
+      storage.getItem('show_support_offline_only') || 'false'
+    ) as boolean
   )
   const handleShowSupportOfflineOnly = (value: boolean) => {
     storage.setItem('show_support_offline_only', JSON.stringify(value))
     setSupportOfflineOnly(value)
   }
 
-  const [showThirdPartyManagedOnly, setShowThirdPartyManagedOnly] = useState(
-    JSON.parse(storage.getItem('show_third_party_managed_only') || 'false')
-  )
+  const [showThirdPartyManagedOnly, setShowThirdPartyManagedOnly] =
+    useState<boolean>(
+      JSON.parse(
+        storage.getItem('show_third_party_managed_only') || 'false'
+      ) as boolean
+    )
   const handleShowThirdPartyOnly = (value: boolean) => {
     storage.setItem('show_third_party_managed_only', JSON.stringify(value))
     setShowThirdPartyManagedOnly(value)
   }
 
-  const [showUpdatesOnly, setShowUpdatesOnly] = useState(
-    JSON.parse(storage.getItem('show_updates_only') || 'false')
+  const [showUpdatesOnly, setShowUpdatesOnly] = useState<boolean>(
+    JSON.parse(storage.getItem('show_updates_only') || 'false') as boolean
   )
   const handleShowUpdatesOnly = (value: boolean) => {
     storage.setItem('show_updates_only', JSON.stringify(value))
@@ -193,8 +193,8 @@ export default React.memo(function Library(): JSX.Element {
 
   const [showCategories, setShowCategories] = useState(false)
 
-  const [showAlphabetFilter, setShowAlphabetFilter] = useState(
-    JSON.parse(storage.getItem('showAlphabetFilter') || 'true')
+  const [showAlphabetFilter, setShowAlphabetFilter] = useState<boolean>(
+    JSON.parse(storage.getItem('showAlphabetFilter') || 'true') as boolean
   )
   const handleToggleAlphabetFilter = () => {
     const newValue = !showAlphabetFilter
@@ -205,23 +205,59 @@ export default React.memo(function Library(): JSX.Element {
     string | null
   >(null)
 
-  const [sortDescending, setSortDescending] = useState(
-    JSON.parse(storage?.getItem('sortDescending') || 'false')
+  const [sortDescending, setSortDescending] = useState<boolean>(
+    JSON.parse(storage?.getItem('sortDescending') || 'false') as boolean
   )
   function handleSortDescending(value: boolean) {
     storage.setItem('sortDescending', JSON.stringify(value))
     setSortDescending(value)
   }
 
-  const [sortInstalled, setSortInstalled] = useState(
-    JSON.parse(storage?.getItem('sortInstalled') || 'true')
+  const [sortInstalled, setSortInstalled] = useState<boolean>(
+    JSON.parse(storage?.getItem('sortInstalled') || 'true') as boolean
   )
   function handleSortInstalled(value: boolean) {
     storage.setItem('sortInstalled', JSON.stringify(value))
     setSortInstalled(value)
   }
 
-  const backToTopElement = useRef(null)
+  const backToTopElement = useRef<HTMLButtonElement | null>(null)
+
+  // ===================================================================
+  // INTELIGÊNCIA DO FILTRO CUSTOMIZADO E EDIÇÃO EM MASSA (LIFT UP)
+  // ===================================================================
+  const [activeStoreFilter, setActiveStoreFilter] = useState<string | null>(
+    () => localStorage.getItem('heroic_active_store_filter')
+  )
+  const [assignments, setAssignments] = useState<Record<string, string>>(
+    () =>
+      JSON.parse(
+        localStorage.getItem('heroic_game_assignments') || '{}'
+      ) as Record<string, string>
+  )
+
+  useEffect(() => {
+    const handleFilterChange = () =>
+      setActiveStoreFilter(localStorage.getItem('heroic_active_store_filter'))
+    const handleAssignmentsChange = () =>
+      setAssignments(
+        JSON.parse(
+          localStorage.getItem('heroic_game_assignments') || '{}'
+        ) as Record<string, string>
+      )
+
+    window.addEventListener('heroicFilterChanged', handleFilterChange)
+    window.addEventListener('gameAssignmentsChanged', handleAssignmentsChange)
+
+    return () => {
+      window.removeEventListener('heroicFilterChanged', handleFilterChange)
+      window.removeEventListener(
+        'gameAssignmentsChanged',
+        handleAssignmentsChange
+      )
+    }
+  }, [])
+  // ===================================================================
 
   //Remember scroll position
   useLayoutEffect(() => {
@@ -274,66 +310,56 @@ export default React.memo(function Library(): JSX.Element {
   }
 
   // cache list of games being installed
-  const installing = useMemo(
+  const installing: string[] = useMemo(
     () =>
-      libraryStatus
+      (libraryStatus as { status: string; appName: string }[])
         .filter((st) => st.status === 'installing')
         .map((st) => st.appName),
     [libraryStatus]
   )
 
-  const filterByPlatform = (library: GameInfo[]) => {
-    if (!library) {
-      return []
-    }
-
-    // check which platforms are turned on if valid for current platform
-    let displayedPlatforms: string[] = []
-    if (platformsFilters['win']) {
-      displayedPlatforms.push('win')
-    }
-    if (platformsFilters['mac'] && platform === 'darwin') {
-      displayedPlatforms.push('mac')
-    }
-    if (platformsFilters['linux'] && platform === 'linux') {
-      displayedPlatforms.push('linux')
-    }
-    if (platformsFilters['browser']) {
-      displayedPlatforms.push('browser')
-    }
-
-    // if all are turned off, display all instead
-    if (!displayedPlatforms.length) {
-      displayedPlatforms = Object.keys(platformsFilters)
-    }
-
-    // add platform variants to check with game info
-    if (displayedPlatforms.includes('win')) {
-      displayedPlatforms.push('windows')
-    }
-    if (displayedPlatforms.includes('mac')) {
-      displayedPlatforms.push('osx', 'Mac')
-    }
-
-    return library.filter((game) => {
-      let gamePlatforms: string[] = []
-
-      if (game?.is_installed) {
-        gamePlatforms = [game?.install?.platform?.toLowerCase() || 'windows']
-      } else {
-        if (game.is_linux_native && platform === 'linux') {
-          gamePlatforms.push('linux')
-        }
-        if (game.is_mac_native && platform === 'darwin') {
-          gamePlatforms.push('mac')
-        }
-        gamePlatforms.push('windows')
+  const filterByPlatform = useCallback(
+    (library: GameInfo[]) => {
+      if (!library) {
+        return []
       }
-      return gamePlatforms.some((plat) => displayedPlatforms.includes(plat))
-    })
-  }
 
-  // top section
+      let displayedPlatforms: string[] = []
+      if (platformsFilters['win']) displayedPlatforms.push('win')
+      if (platformsFilters['mac'] && platform === 'darwin')
+        displayedPlatforms.push('mac')
+      if (platformsFilters['linux'] && platform === 'linux')
+        displayedPlatforms.push('linux')
+      if (platformsFilters['browser']) displayedPlatforms.push('browser')
+
+      if (!displayedPlatforms.length) {
+        displayedPlatforms = Object.keys(platformsFilters)
+      }
+
+      if (displayedPlatforms.includes('win')) displayedPlatforms.push('windows')
+      if (displayedPlatforms.includes('mac'))
+        displayedPlatforms.push('osx', 'Mac')
+
+      return library.filter((game) => {
+        let gamePlatforms: string[] = []
+
+        if (game?.is_installed) {
+          gamePlatforms = [game?.install?.platform?.toLowerCase() || 'windows']
+        } else {
+          if (game.is_linux_native && platform === 'linux') {
+            gamePlatforms.push('linux')
+          }
+          if (game.is_mac_native && platform === 'darwin') {
+            gamePlatforms.push('mac')
+          }
+          gamePlatforms.push('windows')
+        }
+        return gamePlatforms.some((plat) => displayedPlatforms.includes(plat))
+      })
+    },
+    [platformsFilters, platform]
+  )
+
   const showRecentGames = libraryTopSection.startsWith('recently_played')
 
   const favouriteGamesList = useMemo(() => {
@@ -395,23 +421,14 @@ export default React.memo(function Library(): JSX.Element {
     return favourites.map((game) => `${game.app_name}_${game.runner}`)
   }, [favourites])
 
-  const makeLibrary = () => {
+  const makeLibrary = useCallback(() => {
     let displayedStores: string[] = []
-    if (storesFilters['gog'] && gog.username) {
-      displayedStores.push('gog')
-    }
-    if (storesFilters['legendary'] && epic.username) {
+    if (storesFilters['gog'] && gog.username) displayedStores.push('gog')
+    if (storesFilters['legendary'] && epic.username)
       displayedStores.push('legendary')
-    }
-    if (storesFilters['nile'] && amazon.username) {
-      displayedStores.push('nile')
-    }
-    if (storesFilters['sideload']) {
-      displayedStores.push('sideload')
-    }
-    if (storesFilters['zoom'] && zoom.username) {
-      displayedStores.push('zoom')
-    }
+    if (storesFilters['nile'] && amazon.username) displayedStores.push('nile')
+    if (storesFilters['sideload']) displayedStores.push('sideload')
+    if (storesFilters['zoom'] && zoom.username) displayedStores.push('zoom')
 
     if (!displayedStores.length) {
       displayedStores = Object.keys(storesFilters)
@@ -436,7 +453,7 @@ export default React.memo(function Library(): JSX.Element {
       ...amazonLibrary,
       ...zoomLibrary
     ]
-  }
+  }, [storesFilters, epic, gog, amazon, zoom, sideloadedLibrary])
 
   const gamesForAlphabetFilter = useMemo(() => {
     let library: Array<GameInfo> = makeLibrary()
@@ -451,11 +468,8 @@ export default React.memo(function Library(): JSX.Element {
       if (currentCustomCategories && currentCustomCategories.length > 0) {
         const gamesInSelectedCategories = new Set<string>()
 
-        // loop through selected categories and add all games in all those categories
         currentCustomCategories.forEach((category) => {
           if (category === 'preset_uncategorized') {
-            // in the case of the special "uncategorized" category, we read all
-            // the categorized games and add the others to the list to show
             const categorizedGames = Array.from(
               new Set(Object.values(customCategories.list).flat())
             )
@@ -497,7 +511,7 @@ export default React.memo(function Library(): JSX.Element {
 
       if (!showNonAvailable) {
         const nonAvailbleGames = storage.getItem('nonAvailableGames') || '[]'
-        const nonAvailbleGamesArray = JSON.parse(nonAvailbleGames)
+        const nonAvailbleGamesArray = JSON.parse(nonAvailbleGames) as string[]
         library = library.filter(
           (game) => !nonAvailbleGamesArray.includes(game.app_name)
         )
@@ -506,17 +520,8 @@ export default React.memo(function Library(): JSX.Element {
       if (showInstalledOnly) {
         library = library.filter((game) => game.is_installed)
       }
-
-      if (!showNonAvailable) {
-        const nonAvailbleGames = storage.getItem('nonAvailableGames') || '[]'
-        const nonAvailbleGamesArray = JSON.parse(nonAvailbleGames)
-        library = library.filter(
-          (game) => !nonAvailbleGamesArray.includes(game.app_name)
-        )
-      }
     }
 
-    // filter
     try {
       const filteredLibrary = filterByPlatform(library)
       const searchableLibrary: SearchableGame[] = filteredLibrary.map(
@@ -536,9 +541,11 @@ export default React.memo(function Library(): JSX.Element {
       const fuse = new Fuse(searchableLibrary, options)
 
       if (filterText) {
-        const fuzzySearch = fuse
+        const fuzzySearch: GameInfo[] = fuse
           .search(filterText)
-          .map((result) => result.item.original)
+          .map(
+            (result: { item: { original: GameInfo } }) => result.item.original
+          )
         library = fuzzySearch
       } else {
         library = filteredLibrary
@@ -547,7 +554,6 @@ export default React.memo(function Library(): JSX.Element {
       console.log(error)
     }
 
-    // hide hidden
     const hiddenGamesAppNames = hiddenGames.list.map(
       (hidden: HiddenGame) => hidden?.appName
     )
@@ -560,14 +566,6 @@ export default React.memo(function Library(): JSX.Element {
 
     return library
   }, [
-    storesFilters,
-    platformsFilters,
-    epic.library,
-    gog.library,
-    amazon.library,
-    zoom.library,
-    sideloadedLibrary,
-    platform,
     filterText,
     showHidden,
     hiddenGames,
@@ -580,7 +578,9 @@ export default React.memo(function Library(): JSX.Element {
     showSupportOfflineOnly,
     showThirdPartyManagedOnly,
     showUpdatesOnly,
-    gameUpdates
+    gameUpdates,
+    filterByPlatform,
+    makeLibrary
   ])
 
   // select library
@@ -604,6 +604,31 @@ export default React.memo(function Library(): JSX.Element {
         }
       })
     }
+
+    // =========================================================
+    // O FILTRO DA LOJA ATUANDO AQUI ANTES DO CONTADOR!
+    // =========================================================
+    if (activeStoreFilter) {
+      library = library.filter((game) => {
+        const explicitlyAssignedStore = assignments[game.app_name]
+
+        if (explicitlyAssignedStore) {
+          return explicitlyAssignedStore === activeStoreFilter
+        }
+
+        if (activeStoreFilter === 'epic' && game.runner === 'legendary')
+          return true
+        if (activeStoreFilter === 'gog' && game.runner === 'gog') return true
+        if (activeStoreFilter === 'amazon' && game.runner === 'nile')
+          return true
+        if (activeStoreFilter === 'zoom' && game.runner === 'zoom') return true
+        if (activeStoreFilter === 'sideloaded' && game.runner === 'sideload')
+          return true
+
+        return false
+      })
+    }
+    // =========================================================
 
     // sort
     library = library.sort((a, b) => {
@@ -631,19 +656,17 @@ export default React.memo(function Library(): JSX.Element {
     alphabetFilterLetter,
     sortDescending,
     sortInstalled,
-    installing
+    installing,
+    activeStoreFilter, // A biblioteca refaz a conta quando isso muda
+    assignments // A biblioteca refaz a conta se um jogo mudar de loja
   ])
 
-  // we need this to do proper `position: sticky` of the Add Game area
-  // the height of the Header can change at runtime with different font families
-  // and when resizing the window
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
 
     const setHeaderHightCSS = () => {
       if (timer) clearTimeout(timer)
 
-      // adding a timeout so we don't run this for every resize event
       timer = setTimeout(() => {
         const header = document.querySelector('.Header')
         if (header) {
@@ -658,9 +681,7 @@ export default React.memo(function Library(): JSX.Element {
         }
       }, 50)
     }
-    // set when mounted
     setHeaderHightCSS()
-    // also listen the resize event
     window.addEventListener('resize', setHeaderHightCSS)
 
     return () => {
