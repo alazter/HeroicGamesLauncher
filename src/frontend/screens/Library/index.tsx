@@ -80,6 +80,14 @@ export default memo(function Library(): JSX.Element {
     setLayout(layout)
   }
 
+  // ===================================================================
+  // NOVO: ESTADO DA BARRA DE ZOOM
+  // ===================================================================
+  const [cardZoom, setCardZoom] = useState<number>(() => {
+    return parseInt(storage.getItem('heroic_card_zoom') || '180')
+  })
+  // ===================================================================
+
   let initialStoresfilters: StoresFilters
   const storesFiltersString = storage.getItem('storesFilters')
   if (storesFiltersString) {
@@ -259,45 +267,53 @@ export default memo(function Library(): JSX.Element {
   }, [])
   // ===================================================================
 
-  //Remember scroll position
+  // ===================================================================
+  // NOVO: SALVA A POSIÇÃO DA BARRA DE ROLAGEM INTERNA
+  // ===================================================================
   useLayoutEffect(() => {
     const scrollPosition = parseInt(storage?.getItem('scrollPosition') || '0')
+    const scrollArea = document.getElementById('games-scroll-area')
 
-    const storeScrollPosition = () => {
-      storage?.setItem(
-        'scrollPosition',
-        document.body.scrollTop.toString() || '0'
-      )
+    const storeScrollPosition = (e: Event) => {
+      const target = e.target as HTMLDivElement
+      storage?.setItem('scrollPosition', target.scrollTop.toString() || '0')
     }
 
-    document.body.addEventListener('scroll', storeScrollPosition)
-    document.body.scrollTo(0, scrollPosition || 0)
+    if (scrollArea) {
+      scrollArea.addEventListener('scroll', storeScrollPosition)
+      scrollArea.scrollTo(0, scrollPosition || 0)
+    }
 
     return () => {
-      document.body.removeEventListener('scroll', storeScrollPosition)
+      if (scrollArea)
+        scrollArea.removeEventListener('scroll', storeScrollPosition)
     }
   }, [])
 
-  // bind back to top button
+  // ===================================================================
+  // NOVO: MOSTRA O BOTÃO "VOLTAR AO TOPO" BASEADO NO SCROLL INTERNO
+  // ===================================================================
   useEffect(() => {
     const btn = document.getElementById('backToTopBtn')
-    const topSpan = document.getElementById('top')
+    const scrollArea = document.getElementById('games-scroll-area')
 
-    const scrollCallback = () => {
-      if (btn && topSpan) {
-        btn.style.visibility =
-          document.body.scrollTop > 450 ? 'visible' : 'hidden'
+    const scrollCallback = (e: Event) => {
+      const target = e.target as HTMLDivElement
+      if (btn && target) {
+        btn.style.visibility = target.scrollTop > 450 ? 'visible' : 'hidden'
       }
     }
 
-    document.body.addEventListener('scroll', scrollCallback)
-    return () => document.body.removeEventListener('scroll', scrollCallback)
+    if (scrollArea) scrollArea.addEventListener('scroll', scrollCallback)
+    return () => {
+      if (scrollArea) scrollArea.removeEventListener('scroll', scrollCallback)
+    }
   }, [])
 
   const backToTop = () => {
-    const anchor = document.getElementById('top')
-    if (anchor) {
-      anchor.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const scrollArea = document.getElementById('games-scroll-area')
+    if (scrollArea) {
+      scrollArea.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -738,52 +754,141 @@ export default memo(function Library(): JSX.Element {
         setAlphabetFilterLetter
       }}
     >
-      <Header />
-      <LibraryTour />
+      {/* ============================================================== */}
+      {/* NOVO: WRAPPER PARA TRAVAR A TELA E DIVIDIR CABEÇALHO DO SCROLL */}
+      {/* ============================================================== */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden'
+        }}
+      >
+        <Header />
+        <LibraryTour />
 
-      <div className="listing">
-        <span id="top" />
-        {showRecentGames && (
-          <RecentlyPlayed
-            handleModal={handleModal}
-            onlyInstalled={libraryTopSection.endsWith('installed')}
-            showHidden={showHidden}
-          />
-        )}
+        <div
+          className="listing"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            overflow: 'hidden'
+          }}
+        >
+          {/* CABEÇALHO FIXO: Esse bloco nunca mais vai rolar para cima! */}
+          <div style={{ flexShrink: 0 }}>
+            {showRecentGames && (
+              <RecentlyPlayed
+                handleModal={handleModal}
+                onlyInstalled={libraryTopSection.endsWith('installed')}
+                showHidden={showHidden}
+              />
+            )}
 
-        {showFavourites && !showFavouritesLibrary && (
-          <>
-            <div className="library-section-header" data-tour="library-header">
-              <h3 className="libraryHeader">{t('favourites', 'Favourites')}</h3>
-            </div>
-            <GamesList
-              library={favourites}
-              handleGameCardClick={handleModal}
-              isFavourite
-              isFirstLane
-            />
-          </>
-        )}
+            {showFavourites && !showFavouritesLibrary && (
+              <>
+                <div
+                  className="library-section-header"
+                  data-tour="library-header"
+                >
+                  <h3 className="libraryHeader">
+                    {t('favourites', 'Favourites')}
+                  </h3>
+                </div>
+                <GamesList
+                  library={favourites}
+                  handleGameCardClick={handleModal}
+                  isFavourite
+                  isFirstLane
+                />
+              </>
+            )}
 
-        <LibraryHeader list={libraryToShow} />
+            <LibraryHeader list={libraryToShow} />
+          </div>
 
-        {refreshing && !refreshingInTheBackground && <UpdateComponent />}
-
-        {libraryToShow.length === 0 && <EmptyLibraryMessage />}
-
-        {libraryToShow.length > 0 &&
-          (!refreshing || refreshingInTheBackground) && (
-            <GamesList
-              library={libraryToShow}
-              layout={layout}
-              handleGameCardClick={handleModal}
-            />
-          )}
+          {/* ÁREA DE SCROLL: O Quadrado Amarelo! */}
+          <div
+            id="games-scroll-area"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              paddingBottom: '100px'
+            }}
+          >
+            <span id="top" /> {/* Movido para dentro do scroll */}
+            {refreshing && !refreshingInTheBackground && <UpdateComponent />}
+            {libraryToShow.length === 0 && <EmptyLibraryMessage />}
+            {libraryToShow.length > 0 &&
+              (!refreshing || refreshingInTheBackground) && (
+                <GamesList
+                  library={libraryToShow}
+                  layout={layout}
+                  handleGameCardClick={handleModal}
+                />
+              )}
+          </div>
+        </div>
       </div>
+      {/* ============================================================== */}
 
       <button id="backToTopBtn" onClick={backToTop} ref={backToTopElement}>
         <ArrowDropUp id="backToTopArrow" className="material-icons" />
       </button>
+
+      {/* ============================================================== */}
+      {/* BARRA DE ZOOM FLUTUANTE INJETANDO CSS NO GRID                  */}
+      {/* ============================================================== */}
+      {layout === 'grid' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            background: 'rgba(30, 34, 40, 0.95)',
+            backdropFilter: 'blur(10px)',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            zIndex: 9998,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            border: '1px solid #4CAF50',
+            color: '#fff',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <span style={{ fontSize: '18px' }} title="Tamanho das Capas">
+            🔍
+          </span>
+          <input
+            type="range"
+            min="100"
+            max="400"
+            value={cardZoom}
+            onChange={(e) => {
+              const val = Number(e.target.value)
+              setCardZoom(val)
+              storage.setItem('heroic_card_zoom', val.toString())
+            }}
+            style={{
+              cursor: 'pointer',
+              width: '120px',
+              accentColor: '#4CAF50'
+            }}
+          />
+          <style>{`
+            .gameList {
+              grid-template-columns: repeat(auto-fill, minmax(${cardZoom}px, 1fr)) !important;
+            }
+          `}</style>
+        </div>
+      )}
+      {/* ============================================================== */}
 
       {showCategories && <CategoriesManager />}
     </LibraryContext.Provider>

@@ -26,23 +26,31 @@ interface Props {
   isFavourite?: boolean
 }
 
+// ===================================================================
+// NOVO: ATUALIZAÇÃO DO SCROLL DO CONTROLE/TECLADO
+// ===================================================================
 const scrollCardIntoView = (ev: FocusEvent) => {
   const windowHeight = window.innerHeight
   const trgt = ev.target as HTMLElement
   const rect = trgt.getBoundingClientRect()
 
+  // Busca a nossa nova caixa de rolagem (ou cai no fallback antigo)
+  const scrollArea =
+    document.getElementById('games-scroll-area') || document.body
+
   if (rect.top < 100) {
-    document.body.scrollTo({
+    scrollArea.scrollTo({
       top: trgt.parentElement!.offsetTop - 200,
       behavior: 'smooth'
     })
   } else if (rect.bottom > windowHeight - 100) {
-    document.body.scrollTo({
+    scrollArea.scrollTo({
       top: trgt.parentElement!.offsetTop - windowHeight + rect.height + 150,
       behavior: 'smooth'
     })
   }
 }
+// ===================================================================
 
 const GamesList = ({
   library = [],
@@ -220,19 +228,29 @@ const GamesList = ({
           }}
           style={{
             position: 'fixed',
-            bottom: '30px',
-            right: '30px',
-            background: isMassEditMode ? '#c62828' : '#4CAF50',
+            top: '15px' /* Altura perfeita para a barra de ferramentas nativa */,
+            right:
+              '335px' /* Espaçamento ajustado para ficar colado com Categorias */,
+            background: isMassEditMode
+              ? 'rgba(198, 40, 40, 0.8)'
+              : 'transparent',
             color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            fontWeight: 'bold',
+            border:
+              '1px solid rgba(255, 255, 255, 0.25)' /* Borda igual aos botões nativos */,
+            padding: '0 18px',
+            height: '42px' /* Altura idêntica aos botões nativos */,
+            borderRadius: '20px' /* Deixa o botão redondo estilo pílula */,
+            fontWeight: '500',
             cursor: 'pointer',
             zIndex: 9998,
-            boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-            transition: 'background 0.2s',
-            fontSize: '14px'
+            boxShadow: isMassEditMode ? '0 5px 15px rgba(0,0,0,0.3)' : 'none',
+            transition: 'all 0.2s',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter:
+              'blur(5px)' /* Leve desfoque no fundo para premium feel */
           }}
         >
           {isMassEditMode ? 'Cancelar Edição' : 'Edição em Massa'}
