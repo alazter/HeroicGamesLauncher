@@ -30,6 +30,7 @@ export default memo(function LibraryHeader({ list }: Props) {
         justifyContent: 'flex-start',
         width: '100%',
         paddingBottom: '10px',
+        paddingLeft: '35px' /* <--- ADICIONEI ESTE RECUO AQUI */,
         gap: '20px'
       }}
     >

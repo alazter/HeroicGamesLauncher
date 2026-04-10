@@ -26,15 +26,10 @@ interface Props {
   isFavourite?: boolean
 }
 
-// ===================================================================
-// NOVO: ATUALIZAÇÃO DO SCROLL DO CONTROLE/TECLADO
-// ===================================================================
 const scrollCardIntoView = (ev: FocusEvent) => {
   const windowHeight = window.innerHeight
   const trgt = ev.target as HTMLElement
   const rect = trgt.getBoundingClientRect()
-
-  // Busca a nossa nova caixa de rolagem (ou cai no fallback antigo)
   const scrollArea =
     document.getElementById('games-scroll-area') || document.body
 
@@ -50,7 +45,6 @@ const scrollCardIntoView = (ev: FocusEvent) => {
     })
   }
 }
-// ===================================================================
 
 const GamesList = ({
   library = [],
@@ -67,35 +61,39 @@ const GamesList = ({
   const listRef = useRef<HTMLDivElement | null>(null)
   const { activeController } = useContext(ContextProvider)
 
-  // ===================================================================
-  // SISTEMA DE FILTRO E EDIÇÃO EM MASSA
-  // ===================================================================
   const [isMassEditMode, setIsMassEditMode] = useState(false)
   const [selectedGames, setSelectedGames] = useState<GameInfo[]>([])
   const [selectedStore, setSelectedStore] = useState<string>('')
-
   const [activeStoreFilter, setActiveStoreFilter] = useState<string | null>(
     () => localStorage.getItem('heroic_active_store_filter')
   )
 
-  // ERRO 1 RESOLVIDO: Casting seguro do retorno do JSON.parse
   const [customStores] = useState<CustomStore[]>(() => {
     const saved = localStorage.getItem('heroic_custom_stores')
     return saved ? (JSON.parse(saved) as CustomStore[]) : []
   })
 
-  // ERRO 2 RESOLVIDO: Casting seguro do retorno do JSON.parse
   const [assignments, setAssignments] = useState<Record<string, string>>(() => {
     return JSON.parse(
       localStorage.getItem('heroic_game_assignments') || '{}'
     ) as Record<string, string>
   })
 
+  // CORREÇÃO DOS ERROS DE TIPAGEM (ANY)
+  useEffect(() => {
+    const handleMassEditEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ active: boolean }>
+      setIsMassEditMode(customEvent.detail.active)
+      if (!customEvent.detail.active) setSelectedGames([])
+    }
+    window.addEventListener('heroicToggleMassEdit', handleMassEditEvent)
+    return () =>
+      window.removeEventListener('heroicToggleMassEdit', handleMassEditEvent)
+  }, [])
+
   useEffect(() => {
     const handleFilterChange = () =>
       setActiveStoreFilter(localStorage.getItem('heroic_active_store_filter'))
-
-    // ERRO 3 RESOLVIDO: Casting seguro do argumento do setAssignments
     const handleAssignmentsChange = () =>
       setAssignments(
         JSON.parse(
@@ -133,22 +131,18 @@ const GamesList = ({
     setAssignments(newAssignments)
     window.dispatchEvent(new Event('gameAssignmentsChanged'))
 
-    setSelectedGames([])
-    setIsMassEditMode(false)
+    window.dispatchEvent(
+      new CustomEvent('heroicToggleMassEdit', { detail: { active: false } })
+    )
     setSelectedStore('')
   }
 
-  // A MÁGICA DO FILTRO
   const filteredLibrary = useMemo(() => {
     if (!activeStoreFilter) return library
-
     return library.filter((game) => {
       const explicitlyAssignedStore = assignments[game.app_name]
-
-      if (explicitlyAssignedStore) {
+      if (explicitlyAssignedStore)
         return explicitlyAssignedStore === activeStoreFilter
-      }
-
       if (activeStoreFilter === 'epic' && game.runner === 'legendary')
         return true
       if (activeStoreFilter === 'gog' && game.runner === 'gog') return true
@@ -156,22 +150,13 @@ const GamesList = ({
       if (activeStoreFilter === 'zoom' && game.runner === 'zoom') return true
       if (activeStoreFilter === 'sideloaded' && game.runner === 'sideload')
         return true
-
       return false
     })
   }, [library, activeStoreFilter, assignments])
-  // ===================================================================
 
-  // ===================================================================
-  // O "OLHEIRO" DEVOLVIDO E CORRIGIDO (Carrega as capas e os cliques)
-  // ===================================================================
   useEffect(() => {
     if (filteredLibrary.length) {
-      const options = {
-        rootMargin: '500px',
-        threshold: 0
-      }
-
+      const options = { rootMargin: '500px', threshold: 0 }
       const callback: IntersectionObserverCallback = (entries, observer) => {
         const entered: string[] = []
         entries.forEach((entry) => {
@@ -188,75 +173,29 @@ const GamesList = ({
           )
         }
       }
-
       const observer = new IntersectionObserver(callback, options)
-
-      document.querySelectorAll('[data-invisible]').forEach((card) => {
-        observer.observe(card)
-      })
-
-      return () => {
-        observer.disconnect()
-      }
+      document
+        .querySelectorAll('[data-invisible]')
+        .forEach((card) => observer.observe(card))
+      return () => observer.disconnect()
     }
     return () => ({})
   }, [filteredLibrary])
 
-  // ERROS 4 E 5 RESOLVIDOS: Capturando listRef.current em uma variável local segura e limpando os arrays de dependência
   useEffect(() => {
     const listNode = listRef.current
     if (listNode && activeController) {
-      listNode.addEventListener('focus', scrollCardIntoView, {
-        capture: true
-      })
-      return () => {
+      listNode.addEventListener('focus', scrollCardIntoView, { capture: true })
+      return () =>
         listNode.removeEventListener('focus', scrollCardIntoView, {
           capture: true
         })
-      }
     }
     return () => ({})
   }, [activeController])
 
   return (
     <>
-      {library.length > 0 && !isFirstLane && (
-        <button
-          onClick={() => {
-            setIsMassEditMode(!isMassEditMode)
-            setSelectedGames([])
-          }}
-          style={{
-            position: 'fixed',
-            top: '15px' /* Altura perfeita para a barra de ferramentas nativa */,
-            right:
-              '335px' /* Espaçamento ajustado para ficar colado com Categorias */,
-            background: isMassEditMode
-              ? 'rgba(198, 40, 40, 0.8)'
-              : 'transparent',
-            color: '#fff',
-            border:
-              '1px solid rgba(255, 255, 255, 0.25)' /* Borda igual aos botões nativos */,
-            padding: '0 18px',
-            height: '42px' /* Altura idêntica aos botões nativos */,
-            borderRadius: '20px' /* Deixa o botão redondo estilo pílula */,
-            fontWeight: '500',
-            cursor: 'pointer',
-            zIndex: 9998,
-            boxShadow: isMassEditMode ? '0 5px 15px rgba(0,0,0,0.3)' : 'none',
-            transition: 'all 0.2s',
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter:
-              'blur(5px)' /* Leve desfoque no fundo para premium feel */
-          }}
-        >
-          {isMassEditMode ? 'Cancelar Edição' : 'Edição em Massa'}
-        </button>
-      )}
-
       {isMassEditMode && selectedGames.length > 0 && (
         <div
           style={{
@@ -343,12 +282,9 @@ const GamesList = ({
             const { app_name, is_installed, runner } = gameInfo
             const isJustPlayed = (isFavourite || isRecent) && index === 0
             let is_dlc = false
-            if (gameInfo.runner !== 'sideload') {
+            if (gameInfo.runner !== 'sideload')
               is_dlc = gameInfo.install.is_dlc ?? false
-            }
-
-            if (is_dlc) return null
-            if (!is_installed && onlyInstalled) return null
+            if (is_dlc || (!is_installed && onlyInstalled)) return null
 
             const hasUpdate = is_installed && gameUpdates?.includes(app_name)
             const isSelected = selectedGames.some(
@@ -433,5 +369,4 @@ const GamesList = ({
   )
 }
 
-// ERRO 6 RESOLVIDO: Usando o memo importado diretamente do 'react' ao invés de React.memo
 export default memo(GamesList)

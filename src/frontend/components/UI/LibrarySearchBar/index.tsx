@@ -21,7 +21,7 @@ const RUNNER_TO_STORE: Partial<Record<Runner, string>> = {
   zoom: 'Zoom'
 }
 
-const DISPLAY_MODE = 'icon-text'
+const DISPLAY_MODE: string = 'icon-text'
 
 interface CustomStore {
   id: string
@@ -138,6 +138,9 @@ export default function LibrarySearchBar() {
         boxSizing: 'border-box'
       }}
     >
+      {/* A MÁGICA 1: Mantive a barra de pesquisa fixa em 450px 
+        para que ela não esmague os botões que vêm ao lado! 
+      */}
       <style>
         {`
           [data-tour="library-search"] { width: 450px !important; min-width: 450px !important; flex-grow: 0 !important; }
@@ -145,10 +148,14 @@ export default function LibrarySearchBar() {
         `}
       </style>
 
+      {/* A MÁGICA 2: justify-content: 'flex-start' garante que todos 
+        fiquem colados à esquerda, um após o outro.
+      */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'flex-start',
           gap: '15px',
           width: '100%'
         }}
@@ -161,13 +168,14 @@ export default function LibrarySearchBar() {
             placeholder={t('search', 'Search for Games')}
           />
         </div>
+
+        {/* A MÁGICA 3: Tirei o "marginLeft: auto" que jogava eles pra longe */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            flexShrink: 0,
-            marginLeft: 'auto'
+            flexShrink: 0
           }}
         >
           <AddGameButton data-tour="library-add-game" />
@@ -194,12 +202,12 @@ export default function LibrarySearchBar() {
             const imageSource = store.icon
               ? store.icon
               : `/images/${store.id}.png`
-            const isActive = activeFilter === store.id // Verifica se este é o botão filtrado
+            const isActive = activeFilter === store.id
 
             return (
               <button
                 key={store.id}
-                onClick={() => handleFilterClick(store.id)} // Adicionado o evento de clique!
+                onClick={() => handleFilterClick(store.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -210,10 +218,10 @@ export default function LibrarySearchBar() {
                   borderRadius: '8px',
                   backgroundColor: isActive
                     ? 'rgba(76, 175, 80, 0.2)'
-                    : 'rgba(255, 255, 255, 0.05)', // Fica verde se estiver ativo
+                    : 'rgba(255, 255, 255, 0.05)',
                   border: isActive
                     ? '1px solid #4CAF50'
-                    : '1px solid rgba(255, 255, 255, 0.1)', // Borda verde se estiver ativo
+                    : '1px solid rgba(255, 255, 255, 0.1)',
                   color: isActive ? '#4CAF50' : '#fff',
                   fontSize: '14px',
                   cursor: 'pointer',

@@ -2,10 +2,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: var(--space-md);
+  display: block; /* MÁGICA 1: Tira a trava horizontal, deixa a página livre */
   padding: var(--space-md);
   background: var(--gradient-body-background, var(--body-background));
   color: var(--text-secondary);
@@ -18,24 +15,27 @@
 }
 
 .Header__filters {
-  grid-area: filters;
+  position: absolute; /* MÁGICA 2: Faz os botões flutuarem à direita */
+  top: var(--space-md);
+  right: var(--space-md);
   display: flex;
   gap: var(--space-md);
-  align-self: center;
-  justify-self: flex-end;
+  align-items: flex-start;
+  z-index: 20; /* Mantém eles clicáveis por cima de tudo */
 }
 
-.Header__filters .FormControl {
-  margin-inline-end: 8px;
+/* Garante que os botões flutuantes respeitem os controles da janela no Windows */
+.frameless:not(.fullscreen) .Header__filters {
+  right: calc(var(--overlay-controls-width) - env(titlebar-area-x, 0px) + 10px);
 }
 
 .Header__search {
-  flex-grow: 1;
-  max-width: 700px;
+  width: 100%; /* Agora as lojas têm passe livre para usar 100% da tela! */
 }
 
 .Header__search .FormControl {
   width: 100%;
+  max-width: 700px;
 }
 
 .Header__summary {

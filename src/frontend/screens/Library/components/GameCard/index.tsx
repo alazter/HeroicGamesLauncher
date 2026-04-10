@@ -23,7 +23,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import ContextProvider from 'frontend/state/ContextProvider'
 import { updateGame } from 'frontend/helpers/library'
-import { CachedImage, SvgButton } from 'frontend/components/UI'
+import { CachedImage } from 'frontend/components/UI'
 import ContextMenu, { Item } from '../ContextMenu'
 import { hasProgress } from 'frontend/hooks/hasProgress'
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle'
@@ -65,6 +65,43 @@ interface Card {
 
 const storage: Storage = window.localStorage
 
+// ===================================================================
+// O TRUQUE MESTRE: Um botão falso que o mouse clica, mas o Joystick não enxerga!
+// ===================================================================
+const NonFocusableButton = ({
+  children,
+  onClick,
+  className,
+  title,
+  disabled
+}: {
+  children: React.ReactNode
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+  className?: string
+  title?: string
+  disabled?: boolean
+}) => (
+  <div
+    onClick={(e) => {
+      if (disabled) return
+      onClick?.(e)
+    }}
+    title={title}
+    className={`svg-button ${className} ${disabled ? 'iconDisabled' : ''}`}
+    style={{
+      cursor: disabled ? 'default' : 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+    tabIndex={-1}
+    data-sn-focusable="false"
+  >
+    {children}
+  </div>
+)
+// ===================================================================
+
 const GameCard = ({
   hasUpdate,
   buttonClick,
@@ -74,24 +111,6 @@ const GameCard = ({
   gameInfo: gameInfoFromProps,
   dataTour
 }: Card) => {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    // render an empty div until the card enters the viewport
-    // check GameList for the other side of this detection
-    const callback = (e: CustomEvent<{ appNames: string[] }>) => {
-      if (e.detail.appNames.includes(gameInfoFromProps.app_name)) {
-        setVisible(true)
-      }
-    }
-
-    window.addEventListener('visible-cards', callback)
-
-    return () => {
-      window.removeEventListener('visible-cards', callback)
-    }
-  }, [])
-
   const [gameInfo, setGameInfo] = useState<GameInfo>(gameInfoFromProps)
   const [showUninstallModal, setShowUninstallModal] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
@@ -106,8 +125,10 @@ const GameCard = ({
     favouriteGames,
     showDialogModal,
     activeController,
-    connectivity
+    connectivity,
+    customCategories
   } = useContext(ContextProvider)
+
   const { openGameSettingsModal, openGameLogsModal, openGameCategoriesModal } =
     useGlobalState.keys(
       'openGameSettingsModal',
@@ -129,7 +150,7 @@ const GameCard = ({
   } = { ...gameInfoFromProps }
 
   const isInstallable =
-    gameInfo.installable === undefined || gameInfo.installable // If it's undefined we assume it's installable
+    gameInfo.installable === undefined || gameInfo.installable
 
   const [progress, previousProgress] = hasProgress(appName, runner)
   const { install_size: size = '0' } = {
@@ -137,8 +158,56 @@ const GameCard = ({
   }
 
   const { status, folder, label } = hasStatus(gameInfo, size)
-
   const isBrowserGame = gameInfo.install.platform === 'Browser'
+
+  const assignedCategory = useMemo(() => {
+    if (!customCategories || !customCategories.list) return null
+
+    const gameId = `${appName}_${runner}`
+
+    for (const [categoryName, gamesArray] of Object.entries(
+      customCategories.list
+    )) {
+      if (Array.isArray(gamesArray) && gamesArray.includes(gameId)) {
+        return categoryName
+      }
+    }
+    return null
+  }, [customCategories, appName, runner])
+
+  const effectiveStore = assignedCategory || runner
+
+  const renderCustomStoreLogo = (storeOrCategory: string) => {
+    const key = storeOrCategory.toLowerCase()
+    const svgStyle = { width: '100%', height: '100%', fill: 'currentColor' }
+
+    switch (key) {
+      case 'indies':
+      case 'xbox':
+        return (
+          <svg viewBox="0 0 512 512" style={svgStyle}>
+            <path d="M480 128H32C14.3 128 0 142.3 0 160v192c0 17.7 14.3 32 32 32h448c17.7 0 32-14.3 32-32V160c0-17.7-14.3-32-32-32zm-336 48h32v32h32v32h-32v32h-32v-32h-32v-32h32v-32zm208 112c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm80-48c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z" />
+          </svg>
+        )
+
+      case 'steam':
+        return (
+          <svg viewBox="0 0 496 512" style={svgStyle}>
+            <path d="M496 256c0 137-111 248-248 248-25.6 0-50.2-3.9-73.4-11.1l-16.3-22.6c-4.4-6.1-13.4-6.8-18.7-1.4l-57.1 57.1c-6.1 6.1-15.8 4.7-19.9-2.9l-22.8-42.3c-2.3-4.2-7.5-6.1-12-4.4-44.5 16.5-93.5 17.3-138.8 2.2C1.7 465.1-4.8 447.4 3.7 427.6c27-63.1 79.1-112.5 142.1-136.2l35.8-66.4c2.8-5.2 8.7-8 14.7-7.4l60.2 6c5.7.6 10.9-2.8 12.8-8.2l12.7-36.6c-27.1-26.7-27.4-70.5-.8-97.5 27.2-27.6 71.8-27.6 99 0 27.3 27.5 27.3 71.9 0 99.5-23.7 23.9-60.5 27.2-87.7 9.8l-12.8 36.8c-1.3 3.8-4.7 6.4-8.7 6.8l-59 5.9c-4.1.4-8-1.5-10.2-4.9l-34.5-54.8c-24-38.1-18.7-88.6 13.5-120.8 33-33.4 87.2-33.4 120.2 0s33 87.2 0 120.6c-29.2 29.5-74.1 33.3-107.6 11.2l34.2 54.3c2 3.2 1.3 7.4-1.6 9.8l-56.1 46c-3.1 2.5-7.5 2.5-10.6.1l-22-16.5c-3.1-2.3-7.4-2.2-10.4.3-39.6 33.5-94.8 44.7-145 28.5C39.6 373.1 8 327.3 8 274.6c0-128.8 111.9-234.6 248-234.6S504 145.8 504 274.6c0 15.6-1.7 30.9-4.9 45.7l-41.4-56.5c-4.1-5.6-12.2-6.5-17.4-1.9l-61.1 53.6c-5.8 5.1-6.5 13.9-1.5 19.8l61.6 71.6c4.6 5.3 12.6 6.1 18.2 1.9l40-29.7c8.1-6 10.1-17.1 4.5-25.3l-16-23z" />
+          </svg>
+        )
+
+      case 'piratas':
+        return (
+          <svg viewBox="0 0 512 512" style={svgStyle}>
+            <path d="M256 0C114.6 0 0 100.3 0 224c0 70.1 36.9 132.6 94.5 173.7 9.6 6.9 15.2 18.1 13.5 29.9l-9.4 66.2c-1.4 9.6 6 18.2 15.7 18.2H192v-48c0-17.7 14.3-32 32-32h64c17.7 0 32 14.3 32 32v48h77.7c9.7 0 17.1-8.6 15.7-18.2l-9.4-66.2c-1.7-11.7 3.8-23 13.5-29.9C475.1 356.6 512 294.1 512 224 512 100.3 397.4 0 256 0zM176 256c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm160 0c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48z" />
+          </svg>
+        )
+
+      default:
+        return <StoreLogos runner={storeOrCategory as Runner} />
+    }
+  }
 
   useEffect(() => {
     setIsLaunching(false)
@@ -148,12 +217,12 @@ const GameCard = ({
         setGameInfo(newInfo)
       }
     }
-    updateGameInfo()
-  }, [status])
+    void updateGameInfo()
+  }, [status, appName, runner])
 
   async function handleUpdate() {
     if (gameInfo.runner !== 'sideload')
-      updateGame({ appName, runner, gameInfo })
+      await updateGame({ appName, runner, gameInfo })
   }
 
   const grid = forceCard || layout === 'grid'
@@ -205,42 +274,51 @@ const GameCard = ({
     }
     if (isUninstalling) {
       return (
-        <button className="svg-button iconDisabled">
+        <NonFocusableButton disabled>
           <svg />
-        </button>
+        </NonFocusableButton>
       )
     }
     if (isQueued) {
       return (
-        <SvgButton
+        <NonFocusableButton
           title={t('button.queue.remove', 'Remove from Queue')}
           className="queueIcon"
-          onClick={() => handleRemoveFromQueue()}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            handleRemoveFromQueue()
+          }}
         >
           <RemoveCircleIcon />
-        </SvgButton>
+        </NonFocusableButton>
       )
     }
     if (isPlaying) {
       return (
-        <SvgButton
+        <NonFocusableButton
           className="cancelIcon"
-          onClick={async () => handlePlay(runner)}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            void handlePlay(runner)
+          }}
           title={`${t('label.playing.stop')} (${title})`}
         >
           <StopIconAlt />
-        </SvgButton>
+        </NonFocusableButton>
       )
     }
     if (isInstalling || isQueued) {
       return (
-        <SvgButton
+        <NonFocusableButton
           className="cancelIcon"
-          onClick={async () => handlePlay(runner)}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            void handlePlay(runner)
+          }}
           title={`${t('button.cancel')} (${title})`}
         >
           <StopIcon />
-        </SvgButton>
+        </NonFocusableButton>
       )
     }
     if (isInstalled) {
@@ -248,24 +326,30 @@ const GameCard = ({
         isLaunching ||
         ['syncing-saves', 'launching', 'winetricks', 'redist'].includes(status!)
       return (
-        <SvgButton
+        <NonFocusableButton
           className={!notAvailable ? 'playIcon' : 'notAvailableIcon'}
-          onClick={async () => handlePlay(runner)}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            void handlePlay(runner)
+          }}
           title={`${t('label.playing.start')} (${title})`}
           disabled={disabled}
         >
           {justPlayed ? <span>{t('button.play', 'PLAY')}</span> : <PlayIcon />}
-        </SvgButton>
+        </NonFocusableButton>
       )
     } else {
       return (
-        <SvgButton
+        <NonFocusableButton
           className="downIcon"
-          onClick={() => buttonClick()}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            buttonClick()
+          }}
           title={`${t('button.install')} (${title})`}
         >
           <DownIcon />
-        </SvgButton>
+        </NonFocusableButton>
       )
     }
   }
@@ -288,49 +372,42 @@ const GameCard = ({
 
   const items: Item[] = [
     {
-      // remove from install queue
       label: t('button.queue.remove'),
       onclick: () => handleRemoveFromQueue(),
       show: isQueued && !isInstalling,
       icon: <Cancel />
     },
     {
-      // stop if running
       label: t('label.playing.stop'),
-      onclick: async () => handlePlay(runner),
+      onclick: () => void handlePlay(runner),
       show: isPlaying,
       icon: <Cancel />
     },
     {
-      // launch game
       label: t('label.playing.start'),
-      onclick: async () => handlePlay(runner),
+      onclick: () => void handlePlay(runner),
       show: isInstalled && !isPlaying && !isUpdating && !isQueued,
       icon: <PlayArrow />
     },
     {
-      // update
       label: t('button.update', 'Update'),
-      onclick: async () => handleUpdate(),
+      onclick: () => void handleUpdate(),
       show: hasUpdate && !isUpdating && !isQueued,
       icon: <Upgrade />
     },
     {
-      // install
       label: t('button.install'),
       onclick: () => buttonClick(),
       show: !isInstalled && !isQueued && isInstallable,
       icon: <Download />
     },
     {
-      // cancel installation/update
       label: t('button.cancel'),
-      onclick: async () => handlePlay(runner),
+      onclick: () => void handlePlay(runner),
       show: isInstalling || isUpdating,
       icon: <Cancel />
     },
     {
-      // open the game page
       label: t('button.details', 'Details'),
       onclick: () =>
         navigate(`/gamepage/${runner}/${appName}`, { state: { gameInfo } }),
@@ -338,7 +415,6 @@ const GameCard = ({
       icon: <OpenInNew />
     },
     {
-      // settings
       label: t('submenu.settings', 'Settings'),
       onclick: () => openGameSettingsModal(gameInfo),
       show: isInstalled && !isUninstalling && !isBrowserGame,
@@ -351,14 +427,12 @@ const GameCard = ({
       icon: <Description />
     },
     {
-      // hide
       label: t('button.hide_game', 'Hide Game'),
       onclick: () => hiddenGames.add(appName, title),
       show: !isHiddenGame,
       icon: <VisibilityOff />
     },
     {
-      // unhide
       label: t('button.unhide_game', 'Unhide Game'),
       onclick: () => hiddenGames.remove(appName),
       show: isHiddenGame,
@@ -389,7 +463,6 @@ const GameCard = ({
       icon: <PlaylistRemove />
     },
     {
-      // uninstall
       label: t('button.uninstall'),
       onclick: onUninstallClick,
       show: isInstalled && !isUpdating && !isPlaying,
@@ -411,17 +484,6 @@ const GameCard = ({
   const showUpdateButton =
     hasUpdate && !isUpdating && !isQueued && !notAvailable
 
-  if (!visible) {
-    return (
-      <div
-        className={wrapperClasses}
-        data-app-name={appName}
-        data-invisible={true}
-        data-tour={dataTour}
-      ></div>
-    )
-  }
-
   const showSettingsButton = isInstalled && !isUninstalling && !isBrowserGame
   const showUpdateBadge =
     hasUpdate && !isUpdating && !isQueued && activeController
@@ -441,6 +503,25 @@ const GameCard = ({
           className={wrapperClasses}
           data-app-name={appName}
           data-tour={dataTour}
+          tabIndex={0}
+          data-sn-focusable="true"
+          onFocus={(e) => {
+            // Rola suavemente usando a nova margem de segurança (scroll-margin)
+            if (activeController) {
+              e.currentTarget.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+              })
+            }
+          }}
+          onKeyDown={(e) => {
+            if (activeController && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault()
+              navigate(`/gamepage/${runner}/${appName}`, {
+                state: { gameInfo }
+              })
+            }
+          }}
         >
           {haveStatus && <span className="gameCardStatus">{label}</span>}
           {showUpdateBadge && (
@@ -448,14 +529,16 @@ const GameCard = ({
               {t('status.hasUpdates')}
             </span>
           )}
+
           <Link
             to={`/gamepage/${runner}/${appName}`}
             state={{ gameInfo }}
+            tabIndex={-1}
+            data-sn-focusable="false"
             style={
               { '--installing-effect': installingGrayscale } as CSSProperties
             }
           >
-            <StoreLogos runner={runner} />
             {justPlayed ? (
               <CachedImage
                 src={art_cover || fallBackImage}
@@ -504,29 +587,83 @@ const GameCard = ({
             </span>
           </Link>
           <>
-            <span className="icons">
-              {showUpdateButton && (
-                <SvgButton
-                  className="updateIcon"
-                  title={`${t('button.update')} (${title})`}
-                  onClick={async () => handleUpdate()}
-                >
-                  <FontAwesomeIcon size={'2x'} icon={faRepeat} />
-                </SvgButton>
-              )}
-              {showSettingsButton && (
-                <>
-                  <SvgButton
+            <span
+              className="icons"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '6px 10px 2px 10px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div
+                className="bottom-store-logo"
+                style={{
+                  display: 'flex',
+                  flex: 1,
+                  justifyContent: 'flex-start'
+                }}
+              >
+                {renderCustomStoreLogo(effectiveStore)}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flex: 1,
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {showUpdateButton && (
+                  <NonFocusableButton
+                    className="updateIcon"
+                    title={`${t('button.update')} (${title})`}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      void handleUpdate()
+                    }}
+                  >
+                    <FontAwesomeIcon size={'2x'} icon={faRepeat} />
+                  </NonFocusableButton>
+                )}
+                {showSettingsButton && (
+                  <NonFocusableButton
                     title={`${t('submenu.settings')} (${title})`}
                     className="settingsIcon"
-                    onClick={() => openGameSettingsModal(gameInfo)}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation()
+                      openGameSettingsModal(gameInfo)
+                    }}
                   >
                     <SettingsIcon />
-                  </SvgButton>
-                </>
-              )}
-              {renderIcon()}
+                  </NonFocusableButton>
+                )}
+              </div>
+
+              <div
+                style={{ display: 'flex', flex: 1, justifyContent: 'flex-end' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {renderIcon()}
+              </div>
             </span>
+
+            <style>{`
+              .bottom-store-logo > * {
+                position: static !important;
+                width: 45px !important;      
+                height: 45px !important;     
+                margin: 0 !important;
+                opacity: 0.85;
+                transition: opacity 0.2s ease;
+              }
+              .bottom-store-logo:hover > * {
+                opacity: 1;
+              }
+            `}</style>
           </>
         </div>
       </ContextMenu>
