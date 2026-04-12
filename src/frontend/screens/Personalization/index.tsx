@@ -32,6 +32,20 @@ export default function PersonalizationScreen() {
     ]
   })
 
+  // ==============================================================
+  // ESTADOS DOS TOGGLES DE INTERFACE (GAMEPAD / MOUSE)
+  // ==============================================================
+  const [hideIconsGamepad, setHideIconsGamepad] = useState<boolean>(() => {
+    const saved = localStorage.getItem('heroic_hide_icons_gamepad')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
+  const [hideIconsMouse, setHideIconsMouse] = useState<boolean>(() => {
+    const saved = localStorage.getItem('heroic_hide_icons_mouse')
+    return saved !== null ? JSON.parse(saved) : false
+  })
+  // ==============================================================
+
   useEffect(() => {
     localStorage.setItem('heroic_custom_stores', JSON.stringify(stores))
     window.dispatchEvent(new Event('customStoresChanged'))
@@ -93,6 +107,24 @@ export default function PersonalizationScreen() {
   const handleRemoveStore = (id: string) => {
     setStores((prev) => prev.filter((s) => s.id !== id))
   }
+
+  // ==============================================================
+  // FUNÇÕES DE DISPARO PARA MUDANÇA DE COMPORTAMENTO
+  // ==============================================================
+  const handleToggleGamepadIcons = () => {
+    const newVal = !hideIconsGamepad
+    setHideIconsGamepad(newVal)
+    localStorage.setItem('heroic_hide_icons_gamepad', JSON.stringify(newVal))
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleToggleMouseIcons = () => {
+    const newVal = !hideIconsMouse
+    setHideIconsMouse(newVal)
+    localStorage.setItem('heroic_hide_icons_mouse', JSON.stringify(newVal))
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+  // ==============================================================
 
   // Estilos CSS Inline
   const styles = {
@@ -291,7 +323,7 @@ export default function PersonalizationScreen() {
     } as React.CSSProperties,
 
     // =========================================
-    // 3. COLUNA DIREITA (BACKGROUND)
+    // 3. COLUNA DIREITA (BACKGROUND E CONFIGS)
     // =========================================
     sidebarRight: {
       width: '350px',
@@ -303,7 +335,7 @@ export default function PersonalizationScreen() {
       boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflowY: 'auto'
     } as React.CSSProperties,
 
     dropZone: {
@@ -341,6 +373,44 @@ export default function PersonalizationScreen() {
       color: '#8a9bb0',
       textAlign: 'center',
       marginTop: '20px'
+    } as React.CSSProperties,
+
+    // Estilos dos Novos Toggles
+    toggleRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      background: 'rgba(0, 0, 0, 0.2)',
+      padding: '12px 15px',
+      borderRadius: '8px',
+      border: '1px solid rgba(255,255,255,0.05)',
+      cursor: 'pointer',
+      transition: 'background 0.2s'
+    } as React.CSSProperties,
+
+    toggleTextGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px'
+    } as React.CSSProperties,
+
+    toggleTitle: {
+      fontSize: '13px',
+      fontWeight: 'bold',
+      color: '#fff'
+    } as React.CSSProperties,
+
+    toggleSub: {
+      fontSize: '11px',
+      color: '#8a9bb0'
+    } as React.CSSProperties,
+
+    checkbox: {
+      width: '18px',
+      height: '18px',
+      accentColor: '#4CAF50',
+      cursor: 'pointer',
+      margin: 0
     } as React.CSSProperties
   }
 
@@ -449,11 +519,11 @@ export default function PersonalizationScreen() {
         </div>
 
         {/* ========================================= */}
-        {/* 3. SIDEBAR DIREITA (BACKGROUND)           */}
+        {/* 3. SIDEBAR DIREITA (CONFIGS E BACKGROUND) */}
         {/* ========================================= */}
         <div style={styles.sidebarRight}>
+          {/* SEÇÃO 1: BACKGROUND */}
           <span style={styles.sectionTitle}>PERSONALIZAÇÃO DO BACKGROUND</span>
-
           <div style={styles.dropZone}>
             <span style={styles.dropZoneText}>
               Arraste e solte o Background
@@ -474,6 +544,71 @@ export default function PersonalizationScreen() {
               Nós recomendamos usar uma imagem com a resolução de 1860x950 para
               um melhor preenchimento.
             </p>
+          </div>
+
+          {/* SEÇÃO 2: COMPORTAMENTO DA INTERFACE */}
+          <div style={{ marginTop: '40px' }}>
+            <span style={styles.sectionTitle}>
+              COMPORTAMENTO DA GRADE DE JOGOS
+            </span>
+
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              {/* Opção Gamepad */}
+              <label
+                style={styles.toggleRow}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.background =
+                    'rgba(255, 255, 255, 0.05)')
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.background = 'rgba(0, 0, 0, 0.2)')
+                }
+              >
+                <div style={styles.toggleTextGroup}>
+                  <span style={styles.toggleTitle}>
+                    Ocultar ícones no Gamepad
+                  </span>
+                  <span style={styles.toggleSub}>
+                    Deixa a interface limpa usando controle
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={hideIconsGamepad}
+                  onChange={handleToggleGamepadIcons}
+                  style={styles.checkbox}
+                />
+              </label>
+
+              {/* Opção Mouse */}
+              <label
+                style={styles.toggleRow}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.background =
+                    'rgba(255, 255, 255, 0.05)')
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.background = 'rgba(0, 0, 0, 0.2)')
+                }
+              >
+                <div style={styles.toggleTextGroup}>
+                  <span style={styles.toggleTitle}>
+                    Ocultar ícones no Mouse
+                  </span>
+                  <span style={styles.toggleSub}>
+                    Deixa a interface limpa usando o mouse
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={hideIconsMouse}
+                  onChange={handleToggleMouseIcons}
+                  style={styles.checkbox}
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>

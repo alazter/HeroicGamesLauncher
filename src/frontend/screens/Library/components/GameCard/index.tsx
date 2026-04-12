@@ -66,33 +66,42 @@ interface Card {
 const storage: Storage = window.localStorage
 
 // ===================================================================
-// O TRUQUE MESTRE: Um botão falso que o mouse clica, mas o Joystick não enxerga!
+// O TRUQUE MESTRE: Transformado em Fantasma para o Gamepad!
 // ===================================================================
 const NonFocusableButton = ({
   children,
   onClick,
   className,
   title,
-  disabled
+  disabled,
+  activeController
 }: {
   children: React.ReactNode
   onClick?: React.MouseEventHandler<HTMLDivElement>
   className?: string
   title?: string
   disabled?: boolean
+  activeController?: boolean
 }) => (
   <div
-    onClick={(e) => {
-      if (disabled) return
-      onClick?.(e)
-    }}
+    // Remove o evento de clique e a interatividade se o controle estiver ativo
+    onClick={
+      activeController
+        ? undefined
+        : (e) => {
+            if (disabled) return
+            onClick?.(e)
+          }
+    }
     title={title}
     className={`svg-button ${className} ${disabled ? 'iconDisabled' : ''}`}
     style={{
       cursor: disabled ? 'default' : 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      // Trava de segurança física contra o sistema de foco do Heroic
+      pointerEvents: activeController ? 'none' : 'auto'
     }}
     tabIndex={-1}
     data-sn-focusable="false"
@@ -115,6 +124,31 @@ const GameCard = ({
   const [showUninstallModal, setShowUninstallModal] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
 
+  // ESTADOS DAS CONFIGURAÇÕES DE PERSONALIZAÇÃO
+  const [hideIconsGamepad, setHideIconsGamepad] = useState<boolean>(() => {
+    const saved = storage.getItem('heroic_hide_icons_gamepad')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
+  const [hideIconsMouse, setHideIconsMouse] = useState<boolean>(() => {
+    const saved = storage.getItem('heroic_hide_icons_mouse')
+    return saved !== null ? JSON.parse(saved) : false
+  })
+
+  // Escuta as mudanças de configuração
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedGamepad = storage.getItem('heroic_hide_icons_gamepad')
+      const savedMouse = storage.getItem('heroic_hide_icons_mouse')
+      if (savedGamepad !== null) setHideIconsGamepad(JSON.parse(savedGamepad))
+      if (savedMouse !== null) setHideIconsMouse(JSON.parse(savedMouse))
+    }
+
+    window.addEventListener('heroicSettingsChanged', handleStorageChange)
+    return () =>
+      window.removeEventListener('heroicSettingsChanged', handleStorageChange)
+  }, [])
+
   const { t } = useTranslation('gamepage')
   const { t: t2 } = useTranslation()
 
@@ -128,6 +162,9 @@ const GameCard = ({
     connectivity,
     customCategories
   } = useContext(ContextProvider)
+
+  // A LÓGICA MESTRA DE EXIBIÇÃO
+  const shouldShowIcons = activeController ? !hideIconsGamepad : !hideIconsMouse
 
   const { openGameSettingsModal, openGameLogsModal, openGameCategoriesModal } =
     useGlobalState.keys(
@@ -274,7 +311,7 @@ const GameCard = ({
     }
     if (isUninstalling) {
       return (
-        <NonFocusableButton disabled>
+        <NonFocusableButton disabled activeController={activeController}>
           <svg />
         </NonFocusableButton>
       )
@@ -284,6 +321,7 @@ const GameCard = ({
         <NonFocusableButton
           title={t('button.queue.remove', 'Remove from Queue')}
           className="queueIcon"
+          activeController={activeController}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             handleRemoveFromQueue()
@@ -297,6 +335,7 @@ const GameCard = ({
       return (
         <NonFocusableButton
           className="cancelIcon"
+          activeController={activeController}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             void handlePlay(runner)
@@ -311,6 +350,7 @@ const GameCard = ({
       return (
         <NonFocusableButton
           className="cancelIcon"
+          activeController={activeController}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             void handlePlay(runner)
@@ -328,6 +368,7 @@ const GameCard = ({
       return (
         <NonFocusableButton
           className={!notAvailable ? 'playIcon' : 'notAvailableIcon'}
+          activeController={activeController}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             void handlePlay(runner)
@@ -342,6 +383,7 @@ const GameCard = ({
       return (
         <NonFocusableButton
           className="downIcon"
+          activeController={activeController}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             buttonClick()
@@ -474,7 +516,7 @@ const GameCard = ({
     installed: isInstalled,
     hidden: isHiddenGame,
     notAvailable: notAvailable,
-    gamepad: activeController,
+    gamepad: !shouldShowIcons,
     justPlayed: justPlayed
   })
 
@@ -506,7 +548,6 @@ const GameCard = ({
           tabIndex={0}
           data-sn-focusable="true"
           onFocus={(e) => {
-            // Rola suavemente usando a nova margem de segurança (scroll-margin)
             if (activeController) {
               e.currentTarget.scrollIntoView({
                 behavior: 'smooth',
@@ -586,16 +627,23 @@ const GameCard = ({
               {getStoreName(runner, t2('Other'))}
             </span>
           </Link>
-          <>
+
+          {/* ========================================================= */}
+          {/* LÓGICA DE EXIBIÇÃO DINÂMICA LIGADA ÀS CONFIGURAÇÕES       */}
+          {/* ========================================================= */}
+          {shouldShowIcons && (
             <span
               className="icons"
+              data-sn-focusable="false"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 width: '100%',
                 padding: '6px 10px 2px 10px',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                // Essa linha barra fisicamente o foco do controle
+                pointerEvents: activeController ? 'none' : 'auto'
               }}
             >
               <div
@@ -621,6 +669,7 @@ const GameCard = ({
                   <NonFocusableButton
                     className="updateIcon"
                     title={`${t('button.update')} (${title})`}
+                    activeController={activeController}
                     onClick={(e: React.MouseEvent) => {
                       e.stopPropagation()
                       void handleUpdate()
@@ -633,6 +682,7 @@ const GameCard = ({
                   <NonFocusableButton
                     title={`${t('submenu.settings')} (${title})`}
                     className="settingsIcon"
+                    activeController={activeController}
                     onClick={(e: React.MouseEvent) => {
                       e.stopPropagation()
                       openGameSettingsModal(gameInfo)
@@ -650,21 +700,24 @@ const GameCard = ({
                 {renderIcon()}
               </div>
             </span>
+          )}
 
-            <style>{`
-              .bottom-store-logo > * {
-                position: static !important;
-                width: 45px !important;      
-                height: 45px !important;     
-                margin: 0 !important;
-                opacity: 0.85;
-                transition: opacity 0.2s ease;
-              }
-              .bottom-store-logo:hover > * {
-                opacity: 1;
-              }
-            `}</style>
-          </>
+          {/* ========================================================= */}
+          {/* CSS INJETADO (SEMPRE RENDERIZADO)                         */}
+          {/* ========================================================= */}
+          <style>{`
+            .bottom-store-logo > * {
+              position: static !important;
+              width: 45px !important;      
+              height: 45px !important;     
+              margin: 0 !important;
+              opacity: 0.85;
+              transition: opacity 0.2s ease;
+            }
+            .bottom-store-logo:hover > * {
+              opacity: 1;
+            }
+          `}</style>
         </div>
       </ContextMenu>
     </div>
