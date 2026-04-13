@@ -81,7 +81,7 @@ const NonFocusableButton = ({
   className?: string
   title?: string
   disabled?: boolean
-  activeController?: boolean
+  activeController?: boolean | string
 }) => (
   <div
     // Remove o evento de clique e a interatividade se o controle estiver ativo

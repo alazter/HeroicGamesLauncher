@@ -43,6 +43,9 @@ function ContextMenu({ children, items }: Props) {
     callback()
   }
 
+  // Descobre qual é a primeira opção visível para puxar o foco do Gamepad pra ela
+  const firstVisibleIndex = items.findIndex((item) => item.show)
+
   return (
     <div onContextMenu={handleContextMenu} style={{ cursor: 'context-menu' }}>
       {children}
@@ -56,11 +59,31 @@ function ContextMenu({ children, items }: Props) {
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
             : { top: 0, left: 0 }
         }
+        onKeyDown={(e) => {
+          // ESCUDO: Impede que o nosso interceptador global do Library.tsx
+          // roube o foco se você apertar esquerda/direita aqui dentro!
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.stopPropagation()
+          }
+        }}
       >
         {items.map(
           ({ label, onclick, show, icon }, i) =>
             show && (
-              <MenuItem key={i} onClick={() => handleClick(onclick)}>
+              <MenuItem
+                key={i}
+                onClick={() => handleClick(onclick)}
+                data-sn-focusable="true" // Torna o item visível para o D-Pad
+                tabIndex={0}
+                autoFocus={i === firstVisibleIndex} // Imã de foco ao abrir o menu
+                onKeyDown={(e) => {
+                  // Garante que o botão 'A' do controle execute o clique
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleClick(onclick)
+                  }
+                }}
+              >
                 <ListItemIcon>{icon}</ListItemIcon>
                 {label}
               </MenuItem>
