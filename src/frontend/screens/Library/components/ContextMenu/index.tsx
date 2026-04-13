@@ -1,4 +1,4 @@
-import React, { type ReactElement } from 'react'
+import React, { type ReactElement, useState, memo } from 'react'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import './index.css'
@@ -17,7 +17,7 @@ interface Props {
 }
 
 function ContextMenu({ children, items }: Props) {
-  const [contextMenu, setContextMenu] = React.useState<{
+  const [contextMenu, setContextMenu] = useState<{
     mouseX: number
     mouseY: number
   } | null>(null)
@@ -94,4 +94,4 @@ function ContextMenu({ children, items }: Props) {
   )
 }
 
-export default React.memo(ContextMenu)
+export default memo(ContextMenu)

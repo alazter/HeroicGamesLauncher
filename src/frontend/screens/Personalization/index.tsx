@@ -37,12 +37,12 @@ export default function PersonalizationScreen() {
   // ==============================================================
   const [hideIconsGamepad, setHideIconsGamepad] = useState<boolean>(() => {
     const saved = localStorage.getItem('heroic_hide_icons_gamepad')
-    return saved !== null ? JSON.parse(saved) : true
+    return saved !== null ? (JSON.parse(saved) as boolean) : true
   })
 
   const [hideIconsMouse, setHideIconsMouse] = useState<boolean>(() => {
     const saved = localStorage.getItem('heroic_hide_icons_mouse')
-    return saved !== null ? JSON.parse(saved) : false
+    return saved !== null ? (JSON.parse(saved) as boolean) : false
   })
   // ==============================================================
 

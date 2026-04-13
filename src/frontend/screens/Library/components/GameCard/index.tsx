@@ -127,12 +127,12 @@ const GameCard = ({
   // ESTADOS DAS CONFIGURAÇÕES DE PERSONALIZAÇÃO
   const [hideIconsGamepad, setHideIconsGamepad] = useState<boolean>(() => {
     const saved = storage.getItem('heroic_hide_icons_gamepad')
-    return saved !== null ? JSON.parse(saved) : true
+    return saved !== null ? (JSON.parse(saved) as boolean) : true
   })
 
   const [hideIconsMouse, setHideIconsMouse] = useState<boolean>(() => {
     const saved = storage.getItem('heroic_hide_icons_mouse')
-    return saved !== null ? JSON.parse(saved) : false
+    return saved !== null ? (JSON.parse(saved) as boolean) : false
   })
 
   // Escuta as mudanças de configuração
@@ -140,8 +140,8 @@ const GameCard = ({
     const handleStorageChange = () => {
       const savedGamepad = storage.getItem('heroic_hide_icons_gamepad')
       const savedMouse = storage.getItem('heroic_hide_icons_mouse')
-      if (savedGamepad !== null) setHideIconsGamepad(JSON.parse(savedGamepad))
-      if (savedMouse !== null) setHideIconsMouse(JSON.parse(savedMouse))
+      if (savedGamepad !== null) setHideIconsGamepad(JSON.parse(savedGamepad) as boolean)
+      if (savedMouse !== null) setHideIconsMouse(JSON.parse(savedMouse) as boolean)
     }
 
     window.addEventListener('heroicSettingsChanged', handleStorageChange)

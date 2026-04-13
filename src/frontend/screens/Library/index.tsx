@@ -336,12 +336,12 @@ export default memo(function Library(): JSX.Element {
         })
 
         if (bestMatch) {
-          bestMatch.focus()
+          (bestMatch as HTMLElement).focus()
           if (
-            bestMatch.classList.contains('gameCard') ||
-            bestMatch.classList.contains('gameListItem')
+            (bestMatch as HTMLElement).classList.contains('gameCard') ||
+            (bestMatch as HTMLElement).classList.contains('gameListItem')
           ) {
-            bestMatch.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            (bestMatch as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' })
           }
         } else if (e.key === 'ArrowUp' && isGameCard) {
           // Fallback de segurança raríssimo
