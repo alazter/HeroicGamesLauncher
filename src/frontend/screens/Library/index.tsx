@@ -93,7 +93,7 @@ export default memo(function Library(): JSX.Element {
   }, [cardZoom])
 
   // ====================================================================
-  // NAVEGAÇÃO MATEMÁTICA: ZONAS, GRADE E PONTES
+  // NAVEGAÇÃO CIRÚRGICA: SCANNER GEOMÉTRICO BLINDADO
   // ====================================================================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,236 +103,90 @@ export default memo(function Library(): JSX.Element {
       const active = document.activeElement as HTMLElement
       if (!active) return
 
-      // Classificação estrita do Foco Atual
+      // 1. Inputs e Selects: O código NÃO SE METE, deixa o sistema nativo agir!
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') return
+      }
+
       const isGameCard =
         active.classList.contains('gameCard') ||
         active.classList.contains('gameListItem')
-      const isZoomBtn =
-        active.id === 'zoom-minus-btn' || active.id === 'zoom-plus-btn'
-      const isBackToTopBtn = active.id === 'backToTopBtn'
+      const isInTopArea =
+        !!active.closest('.Header') ||
+        !!active.closest('.listing > div:first-child')
+      const isFloatingBtn = [
+        'zoom-minus-btn',
+        'zoom-plus-btn',
+        'backToTopBtn'
+      ].includes(active.id)
 
-      // O Cabeçalho NÃO pode ser uma capa de jogo!
-      const isInsideTopSection =
-        !isGameCard &&
-        !isZoomBtn &&
-        !isBackToTopBtn &&
-        (!!active.closest('.Header') ||
-          !!active.closest('.listing > div:first-child'))
-
-      const isInsideMainArea =
-        isInsideTopSection || isGameCard || isZoomBtn || isBackToTopBtn
-
-      // Extrator Inteligente de Andares (Zonas) do Cabeçalho
-      const getTopRows = () => {
-        const els = Array.from(
-          document.querySelectorAll(
-            '.Header button, .Header input, .Header [tabindex="0"], .Header [data-sn-focusable="true"], ' +
-              '.listing > div:first-child button, .listing > div:first-child input, .listing > div:first-child [tabindex="0"], .listing > div:first-child [data-sn-focusable="true"]'
-          )
-        ).filter((el) => {
-          // FILTRO BLINDADO: Se for capa de jogo ou container alto, ignora!
-          if (
-            el.classList.contains('gameCard') ||
-            el.classList.contains('gameListItem')
-          )
-            return false
-          const rect = el.getBoundingClientRect()
-          const style = window.getComputedStyle(el)
-          return (
-            rect.height > 0 &&
-            rect.height < 80 &&
-            style.display !== 'none' &&
-            style.visibility !== 'hidden' &&
-            !(el as HTMLInputElement).disabled
-          )
-        }) as HTMLElement[]
-
-        const rows: { centerY: number; elements: HTMLElement[] }[] = []
-        els.forEach((el) => {
-          const centerY =
-            el.getBoundingClientRect().top +
-            el.getBoundingClientRect().height / 2
-          let placed = false
-          for (const row of rows) {
-            if (Math.abs(centerY - row.centerY) < 25) {
-              // 25px de precisão para mesma linha
-              row.elements.push(el)
-              placed = true
-              break
-            }
-          }
-          if (!placed) rows.push({ centerY, elements: [el] })
-        })
-
-        // Ordena de cima pra baixo, esquerda pra direita
-        rows.sort((a, b) => a.centerY - b.centerY)
-        rows.forEach((row) =>
-          row.elements.sort(
-            (a, b) =>
-              a.getBoundingClientRect().left - b.getBoundingClientRect().left
-          )
-        )
-        return rows
-      }
-
-      // ==================================================================
-      // INTERCEPTADOR DA SIDEBAR
-      // ==================================================================
-      if (!isInsideMainArea && e.key === 'ArrowRight') {
-        const rect = active.getBoundingClientRect()
-        if (rect.left < 350) {
+      // 2. REGRAS DOS BOTÕES FLUTUANTES (ZOOM)
+      if (isFloatingBtn) {
+        if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
           e.preventDefault()
           e.stopPropagation()
-          e.stopImmediatePropagation()
-          const firstCard = Array.from(
+          document.getElementById('zoom-plus-btn')?.focus()
+          return
+        }
+        if (active.id === 'zoom-plus-btn' && e.key === 'ArrowLeft') {
+          e.preventDefault()
+          e.stopPropagation()
+          document.getElementById('zoom-minus-btn')?.focus()
+          return
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          e.stopPropagation()
+          const backToTop = document.getElementById('backToTopBtn')
+          if (
+            active.id.includes('zoom') &&
+            backToTop &&
+            window.getComputedStyle(backToTop).visibility === 'visible'
+          ) {
+            backToTop.focus()
+            return
+          }
+          const cards = Array.from(
             document.querySelectorAll('.gameCard, .gameListItem')
-          ).find(
+          ).filter(
             (el) =>
               window.getComputedStyle(el).display !== 'none' &&
               window.getComputedStyle(el).visibility !== 'hidden'
-          ) as HTMLElement
-          if (firstCard) {
-            firstCard.focus()
-            firstCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-          }
+          ) as HTMLElement[]
+          if (cards.length) cards[cards.length - 1].focus()
+          return
+        }
+        if (active.id === 'backToTopBtn' && e.key === 'ArrowDown') {
+          e.preventDefault()
+          e.stopPropagation()
+          const z = document.getElementById('zoom-minus-btn')
+          if (z && window.getComputedStyle(z).display !== 'none') z.focus()
+          return
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          e.stopPropagation()
+          const cards = Array.from(
+            document.querySelectorAll('.gameCard, .gameListItem')
+          ).filter(
+            (el) =>
+              window.getComputedStyle(el).display !== 'none' &&
+              window.getComputedStyle(el).visibility !== 'hidden'
+          ) as HTMLElement[]
+          if (cards.length) cards[cards.length - 1].focus()
           return
         }
       }
 
-      if (!isInsideMainArea) return
-
-      // ==================================================================
-      // 0. LÓGICA DE ZONAS DO CABEÇALHO (VERMELHA, AMARELA, VERDE)
-      // ==================================================================
-      if (isInsideTopSection) {
-        const rows = getTopRows()
-        if (rows.length > 0) {
-          let currentRowIndex = -1
-          let currentElementIndex = -1
-          for (let r = 0; r < rows.length; r++) {
-            const idx = rows[r].elements.indexOf(active)
-            if (idx !== -1) {
-              currentRowIndex = r
-              currentElementIndex = idx
-              break
-            }
-          }
-
-          if (currentRowIndex !== -1) {
-            const currentRow = rows[currentRowIndex]
-
-            if (e.key === 'ArrowRight') {
-              e.preventDefault()
-              e.stopPropagation()
-              e.stopImmediatePropagation()
-              if (currentElementIndex < currentRow.elements.length - 1) {
-                currentRow.elements[currentElementIndex + 1].focus()
-              } else if (currentRowIndex < rows.length - 1) {
-                rows[currentRowIndex + 1].elements[0].focus()
-              } else {
-                const firstCard = Array.from(
-                  document.querySelectorAll('.gameCard, .gameListItem')
-                ).find(
-                  (el) =>
-                    window.getComputedStyle(el).display !== 'none' &&
-                    window.getComputedStyle(el).visibility !== 'hidden'
-                ) as HTMLElement
-                if (firstCard) firstCard.focus()
-              }
-              return
-            }
-
-            if (e.key === 'ArrowLeft') {
-              if (currentElementIndex > 0) {
-                e.preventDefault()
-                e.stopPropagation()
-                e.stopImmediatePropagation()
-                currentRow.elements[currentElementIndex - 1].focus()
-              } else {
-                return // Vai pra Sidebar
-              }
-              return
-            }
-
-            if (e.key === 'ArrowDown') {
-              e.preventDefault()
-              e.stopPropagation()
-              e.stopImmediatePropagation()
-              if (currentRowIndex < rows.length - 1) {
-                const nextRow = rows[currentRowIndex + 1].elements
-                const activeCenter =
-                  active.getBoundingClientRect().left +
-                  active.getBoundingClientRect().width / 2
-                let closest = nextRow[0]
-                let minDistance = Infinity
-                nextRow.forEach((el) => {
-                  const center =
-                    el.getBoundingClientRect().left +
-                    el.getBoundingClientRect().width / 2
-                  const dist = Math.abs(center - activeCenter)
-                  if (dist < minDistance) {
-                    minDistance = dist
-                    closest = el
-                  }
-                })
-                closest.focus()
-              } else {
-                const firstCard = Array.from(
-                  document.querySelectorAll('.gameCard, .gameListItem')
-                ).find(
-                  (el) =>
-                    window.getComputedStyle(el).display !== 'none' &&
-                    window.getComputedStyle(el).visibility !== 'hidden'
-                ) as HTMLElement
-                if (firstCard) firstCard.focus()
-              }
-              return
-            }
-
-            if (e.key === 'ArrowUp') {
-              if (currentRowIndex > 0) {
-                e.preventDefault()
-                e.stopPropagation()
-                e.stopImmediatePropagation()
-                const prevRow = rows[currentRowIndex - 1].elements
-                const activeCenter =
-                  active.getBoundingClientRect().left +
-                  active.getBoundingClientRect().width / 2
-                let closest = prevRow[0]
-                let minDistance = Infinity
-                prevRow.forEach((el) => {
-                  const center =
-                    el.getBoundingClientRect().left +
-                    el.getBoundingClientRect().width / 2
-                  const dist = Math.abs(center - activeCenter)
-                  if (dist < minDistance) {
-                    minDistance = dist
-                    closest = el
-                  }
-                })
-                closest.focus()
-              } else {
-                e.preventDefault()
-                e.stopPropagation()
-                e.stopImmediatePropagation()
-              }
-              return
-            }
-          }
-        }
-      }
-
-      // ==================================================================
-      // 1. LÓGICA DE GRADE EXATA PARA AS CAPAS (MATEMÁTICA DE MATRIZ)
-      // ==================================================================
+      // 3. NAVEGAÇÃO DA GRADE DE JOGOS (Matemática Perfeita Esquerda/Direita)
       if (isGameCard) {
         const allCards = Array.from(
           document.querySelectorAll('.gameCard, .gameListItem')
-        ).filter((el) => {
-          const style = window.getComputedStyle(el)
-          return style.display !== 'none' && style.visibility !== 'hidden'
-        }) as HTMLElement[]
-
+        ).filter(
+          (el) =>
+            window.getComputedStyle(el).display !== 'none' &&
+            window.getComputedStyle(el).visibility !== 'hidden'
+        ) as HTMLElement[]
         const currentIndex = allCards.indexOf(active)
 
         if (currentIndex !== -1) {
@@ -354,197 +208,154 @@ export default memo(function Library(): JSX.Element {
             }
           }
 
-          let nextIndex = -1
-          let stayInGrid = true
-
           if (e.key === 'ArrowRight') {
             if (currentIndex + 1 < allCards.length) {
-              nextIndex = currentIndex + 1
-            } else {
               e.preventDefault()
               e.stopPropagation()
-              e.stopImmediatePropagation()
-              return
-            }
-          } else if (e.key === 'ArrowLeft') {
-            if (currentIndex % columns !== 0) {
-              nextIndex = currentIndex - 1
-            } else {
-              return
-            }
-          } else if (e.key === 'ArrowDown') {
-            nextIndex = currentIndex + columns
-            if (nextIndex >= allCards.length) {
-              const firstItemOfLastRow =
-                Math.floor((allCards.length - 1) / columns) * columns
-              if (currentIndex < firstItemOfLastRow) {
-                nextIndex = allCards.length - 1
-              } else {
-                stayInGrid = false
-              }
-            }
-          } else if (e.key === 'ArrowUp') {
-            nextIndex = currentIndex - columns
-            if (nextIndex < 0) {
-              stayInGrid = false
-            }
-          }
-
-          if (stayInGrid && nextIndex !== -1) {
-            e.preventDefault()
-            e.stopPropagation()
-            e.stopImmediatePropagation()
-            allCards[nextIndex].focus()
-            allCards[nextIndex].scrollIntoView({
-              behavior: 'smooth',
-              block: 'nearest'
-            })
-            return
-          } else if (!stayInGrid && e.key === 'ArrowDown') {
-            e.preventDefault()
-            e.stopPropagation()
-            e.stopImmediatePropagation()
-            const backToTop = document.getElementById('backToTopBtn')
-            const zoomBtn = document.getElementById('zoom-minus-btn')
-            if (
-              backToTop &&
-              window.getComputedStyle(backToTop).visibility === 'visible'
-            ) {
-              backToTop.focus()
-            } else if (
-              zoomBtn &&
-              window.getComputedStyle(zoomBtn).display !== 'none'
-            ) {
-              zoomBtn.focus()
-            }
-            return
-          } else if (!stayInGrid && e.key === 'ArrowUp') {
-            // PONTE DE SUBIDA PERFEITA: Sobe da grade e pega a Sessão Verde!
-            e.preventDefault()
-            e.stopPropagation()
-            e.stopImmediatePropagation()
-            const topRows = getTopRows()
-            if (topRows.length > 0) {
-              const lastRow = topRows[topRows.length - 1].elements
-              const activeCenter =
-                active.getBoundingClientRect().left +
-                active.getBoundingClientRect().width / 2
-              let closest = lastRow[0]
-              let minDistance = Infinity
-              lastRow.forEach((el) => {
-                const center =
-                  el.getBoundingClientRect().left +
-                  el.getBoundingClientRect().width / 2
-                const dist = Math.abs(center - activeCenter)
-                if (dist < minDistance) {
-                  minDistance = dist
-                  closest = el
-                }
+              allCards[currentIndex + 1].focus()
+              allCards[currentIndex + 1].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
               })
-              closest.focus()
             }
             return
           }
-        }
-      }
-
-      // ==================================================================
-      // 1.5. REGRAS DE OURO DOS BOTÕES FLUTUANTES (ZOOM E VOLTAR AO TOPO)
-      // ==================================================================
-      if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        document.getElementById('zoom-plus-btn')?.focus()
-        return
-      }
-      if (active.id === 'zoom-plus-btn' && e.key === 'ArrowLeft') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        document.getElementById('zoom-minus-btn')?.focus()
-        return
-      }
-      if (active.id === 'zoom-plus-btn' && e.key === 'ArrowRight') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        return
-      }
-      if (isZoomBtn && e.key === 'ArrowDown') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        return
-      }
-
-      if (isBackToTopBtn && e.key === 'ArrowDown') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const zoomBtn = document.getElementById('zoom-minus-btn')
-        if (zoomBtn && window.getComputedStyle(zoomBtn).display !== 'none')
-          zoomBtn.focus()
-        return
-      }
-
-      if (isZoomBtn && e.key === 'ArrowUp') {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const backToTop = document.getElementById('backToTopBtn')
-        if (
-          backToTop &&
-          window.getComputedStyle(backToTop).visibility === 'visible'
-        ) {
-          backToTop.focus()
-        } else {
-          const allCards = Array.from(
-            document.querySelectorAll('.gameCard, .gameListItem')
-          ).filter(
-            (el) =>
-              window.getComputedStyle(el).display !== 'none' &&
-              window.getComputedStyle(el).visibility !== 'hidden'
-          ) as HTMLElement[]
-          if (allCards.length > 0) {
-            allCards[allCards.length - 1].focus()
-            allCards[allCards.length - 1].scrollIntoView({
-              behavior: 'smooth',
-              block: 'nearest'
-            })
+          if (e.key === 'ArrowLeft') {
+            if (currentIndex % columns !== 0) {
+              e.preventDefault()
+              e.stopPropagation()
+              allCards[currentIndex - 1].focus()
+              allCards[currentIndex - 1].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+              })
+              return
+            }
+            return // Borda esquerda da grade: deixa ir pra Sidebar nativamente!
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            e.stopPropagation()
+            const nextIndex = currentIndex + columns
+            if (nextIndex < allCards.length) {
+              allCards[nextIndex].focus()
+              allCards[nextIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+              })
+            } else {
+              const btn = document.getElementById('backToTopBtn')
+              const zoomBtn = document.getElementById('zoom-minus-btn')
+              if (btn && window.getComputedStyle(btn).visibility === 'visible')
+                btn.focus()
+              else if (
+                zoomBtn &&
+                window.getComputedStyle(zoomBtn).display !== 'none'
+              )
+                zoomBtn.focus()
+            }
+            return
+          }
+          if (e.key === 'ArrowUp') {
+            if (currentIndex >= columns) {
+              e.preventDefault()
+              e.stopPropagation()
+              allCards[currentIndex - columns].focus()
+              allCards[currentIndex - columns].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+              })
+              return
+            }
+            // SE ESTIVER NA PRIMEIRA LINHA DA GRADE, ELE CAI NA LÓGICA VISUAL ABAIXO!
           }
         }
-        return
       }
 
-      const isEscapingUpFromBackToTop = isBackToTopBtn && e.key === 'ArrowUp'
-      const isEscapingLeftFromZoom =
-        active.id === 'zoom-minus-btn' && e.key === 'ArrowLeft'
+      // 4. SCANNER VISUAL (Com Escudo Anti-Sidebar)
+      const runGeometry = isInTopArea || (isGameCard && e.key === 'ArrowUp')
 
-      if (isEscapingUpFromBackToTop || isEscapingLeftFromZoom) {
+      if (runGeometry && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         e.preventDefault()
         e.stopPropagation()
         e.stopImmediatePropagation()
-        const allCards = Array.from(
-          document.querySelectorAll('.gameCard, .gameListItem')
-        ).filter(
-          (el) =>
-            window.getComputedStyle(el).display !== 'none' &&
-            window.getComputedStyle(el).visibility !== 'hidden'
-        ) as HTMLElement[]
-        if (allCards.length > 0) {
-          const lastCard = allCards[allCards.length - 1]
-          lastCard.focus()
-          lastCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+
+        const focusables = Array.from(
+          document.querySelectorAll(
+            'button, input, a, select, [tabindex]:not([tabindex="-1"]), [data-sn-focusable="true"], .gameCard, .gameListItem'
+          )
+        ).filter((el) => {
+          const rect = el.getBoundingClientRect()
+          const style = window.getComputedStyle(el)
+
+          // ESCUDO DA BARRA LATERAL: O Scanner só enxerga elementos dentro da área principal
+          const isInsideMainArea =
+            !!el.closest('.Header') || !!el.closest('.listing')
+
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.visibility !== 'hidden' &&
+            style.display !== 'none' &&
+            !(el as HTMLInputElement).disabled &&
+            el !== active &&
+            !['zoom-minus-btn', 'zoom-plus-btn', 'backToTopBtn'].includes(
+              el.id
+            ) &&
+            isInsideMainArea
+          )
+        }) as HTMLElement[]
+
+        const activeRect = active.getBoundingClientRect()
+        const activeCX = activeRect.left + activeRect.width / 2
+
+        let bestMatch: HTMLElement | null = null
+        let bestScore = Infinity
+
+        focusables.forEach((el) => {
+          const rect = el.getBoundingClientRect()
+          const cx = rect.left + rect.width / 2
+          let score = Infinity
+
+          if (e.key === 'ArrowUp' && rect.top < activeRect.top - 5) {
+            // Acha a linha que está VISUALMENTE logo acima na tela
+            const dy = Math.max(0, activeRect.top - rect.bottom)
+            const dx = Math.abs(activeCX - cx)
+            score = dy * 20 + dx
+          } else if (e.key === 'ArrowDown' && rect.top > activeRect.top + 5) {
+            // Acha a linha que está VISUALMENTE logo abaixo na tela
+            const dy = Math.max(0, rect.top - activeRect.bottom)
+            const dx = Math.abs(activeCX - cx)
+            score = dy * 20 + dx
+          }
+
+          if (score < bestScore) {
+            bestScore = score
+            bestMatch = el
+          }
+        })
+
+        if (bestMatch) {
+          bestMatch.focus()
+          if (
+            bestMatch.classList.contains('gameCard') ||
+            bestMatch.classList.contains('gameListItem')
+          ) {
+            bestMatch.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }
+        } else if (e.key === 'ArrowUp' && isGameCard) {
+          // Fallback de segurança raríssimo
+          const topBtn = document.querySelector(
+            '.Header input, .Header button'
+          ) as HTMLElement
+          if (topBtn) topBtn.focus()
         }
-        return
       }
     }
 
     window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () => {
+    return () =>
       window.removeEventListener('keydown', handleKeyDown, { capture: true })
-    }
   }, [])
   // ====================================================================
 
