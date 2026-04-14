@@ -93,17 +93,161 @@ export default memo(function Library(): JSX.Element {
   }, [cardZoom])
 
   // ====================================================================
+  // O FANTASMA SINCRONIZADO (Rastreador Independente de Menu das capas de jogos - aqui você pode trocar as cores)
+  // ====================================================================
+  useEffect(() => {
+    const overlay = document.createElement('div')
+    overlay.id = 'heroic-menu-phantom-box'
+    overlay.style.position = 'fixed'
+    overlay.style.border = '2px solid #b6b6b666' // Borda verde tática
+    overlay.style.backgroundColor = 'hsla(0, 0%, 71%, 0.40)' // Preenchimento verde
+    overlay.style.borderRadius = '4px'
+    overlay.style.pointerEvents = 'none'
+    overlay.style.zIndex = '9999999'
+    overlay.style.transition = 'top 0.05s, left 0.05s' // Pulo suave entre itens
+    overlay.style.display = 'none'
+    overlay.style.boxShadow = '0 0 10px rgba(76, 175, 79, 0)'
+    document.body.appendChild(overlay)
+
+    let menuIndex = 0
+    let lastMenuNode: Element | null = null
+
+    const getOpenMenu = () => {
+      const menus = Array.from(
+        document.querySelectorAll('.contexify, .react-contexify, [role="menu"]')
+      ).filter((el) => {
+        const style = window.getComputedStyle(el)
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          style.opacity !== '0'
+        )
+      })
+      return menus[menus.length - 1] // Pega o menu mais alto (se houver sobreposição)
+    }
+
+    const getMenuItems = (menu: Element) => {
+      return Array.from(
+        menu.querySelectorAll(
+          '.contexify_item, .react-contexify__item, [role="menuitem"]'
+        )
+      ).filter((el) => {
+        // Ignora linhas separadoras e itens desativados
+        if (
+          el.hasAttribute('disabled') ||
+          el.classList.contains('contexify_separator') ||
+          el.classList.contains('react-contexify__separator')
+        )
+          return false
+        const rect = el.getBoundingClientRect()
+        return window.getComputedStyle(el).display !== 'none' && rect.height > 0
+      })
+    }
+
+    const updatePhantomBox = () => {
+      const menu = getOpenMenu()
+      if (!menu) {
+        overlay.style.display = 'none'
+        lastMenuNode = null
+        return
+      }
+
+      // Se um menu novo acabou de abrir, reseta o ponteiro para o primeiro item
+      if (menu !== lastMenuNode) {
+        menuIndex = 0
+        lastMenuNode = menu
+      }
+
+      const items = getMenuItems(menu)
+      if (items.length === 0) return
+
+      // Faz o ponteiro dar a volta se passar dos limites (Looping)
+      if (menuIndex < 0) menuIndex = items.length - 1
+      if (menuIndex >= items.length) menuIndex = 0
+
+      const activeItem = items[menuIndex]
+      // Tenta pegar o conteúdo de texto para a caixa ficar do tamanho exato da palavra
+      const contentNode =
+        activeItem.querySelector(
+          '.contexify_itemContent, .react-contexify__item__content'
+        ) || activeItem
+      const rect = contentNode.getBoundingClientRect()
+
+      if (rect.width > 0 && rect.height > 0) {
+        overlay.style.top = rect.top + 'px'
+        overlay.style.left = rect.left + 'px'
+        overlay.style.width = rect.width + 'px'
+        overlay.style.height = rect.height + 'px'
+        overlay.style.display = 'block'
+      }
+    }
+
+    const handleMenuNav = (e: KeyboardEvent) => {
+      const menu = getOpenMenu()
+      if (menu) {
+        // Intercepta as setas e move o nosso ponteiro artificial
+        if (e.key === 'ArrowDown') {
+          menuIndex++
+          updatePhantomBox()
+        } else if (e.key === 'ArrowUp') {
+          menuIndex--
+          updatePhantomBox()
+        }
+      }
+    }
+
+    // Sincroniza o ponteiro caso você decida usar o mouse de repente
+    const handleMouseMove = (e: MouseEvent) => {
+      const menu = getOpenMenu()
+      if (!menu) return
+
+      const items = getMenuItems(menu)
+      items.forEach((item, index) => {
+        if (item.contains(e.target as Node)) {
+          menuIndex = index
+          updatePhantomBox()
+        }
+      })
+    }
+
+    window.addEventListener('keydown', handleMenuNav, { capture: true })
+    window.addEventListener('mousemove', handleMouseMove, { capture: true })
+    // Roda um motor rápido para garantir que a caixa persiga o menu se a tela der scroll
+    const interval = setInterval(updatePhantomBox, 50)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('keydown', handleMenuNav, { capture: true })
+      window.removeEventListener('mousemove', handleMouseMove, {
+        capture: true
+      })
+      if (document.body.contains(overlay)) document.body.removeChild(overlay)
+    }
+  }, [])
+  // ====================================================================
+
+  // ====================================================================
   // NAVEGAÇÃO CIRÚRGICA: SCANNER GEOMÉTRICO BLINDADO
   // ====================================================================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 🚨 TRAVA DE SEGURANÇA: Se houver um menu aberto, DESLIGA a navegação de capas!
+      const isMenuOpen = document.querySelector(
+        '.contexify, .react-contexify, [role="menu"]'
+      )
+      if (
+        isMenuOpen &&
+        window.getComputedStyle(isMenuOpen).display !== 'none'
+      ) {
+        return
+      }
+
       if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key))
         return
 
       const active = document.activeElement as HTMLElement
       if (!active) return
 
-      // 1. Inputs e Selects: O código NÃO SE METE, deixa o sistema nativo agir!
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') return
       }
@@ -120,7 +264,6 @@ export default memo(function Library(): JSX.Element {
         'backToTopBtn'
       ].includes(active.id)
 
-      // 2. REGRAS DOS BOTÕES FLUTUANTES (ZOOM)
       if (isFloatingBtn) {
         if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
           e.preventDefault()
@@ -178,7 +321,6 @@ export default memo(function Library(): JSX.Element {
         }
       }
 
-      // 3. NAVEGAÇÃO DA GRADE DE JOGOS (Matemática Perfeita Esquerda/Direita)
       if (isGameCard) {
         const allCards = Array.from(
           document.querySelectorAll('.gameCard, .gameListItem')
@@ -231,7 +373,7 @@ export default memo(function Library(): JSX.Element {
               })
               return
             }
-            return // Borda esquerda da grade: deixa ir pra Sidebar nativamente!
+            return
           }
           if (e.key === 'ArrowDown') {
             e.preventDefault()
@@ -267,12 +409,10 @@ export default memo(function Library(): JSX.Element {
               })
               return
             }
-            // SE ESTIVER NA PRIMEIRA LINHA DA GRADE, ELE CAI NA LÓGICA VISUAL ABAIXO!
           }
         }
       }
 
-      // 4. SCANNER VISUAL (Com Escudo Anti-Sidebar)
       const runGeometry = isInTopArea || (isGameCard && e.key === 'ArrowUp')
 
       if (runGeometry && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -288,7 +428,6 @@ export default memo(function Library(): JSX.Element {
           const rect = el.getBoundingClientRect()
           const style = window.getComputedStyle(el)
 
-          // ESCUDO DA BARRA LATERAL: O Scanner só enxerga elementos dentro da área principal
           const isInsideMainArea =
             !!el.closest('.Header') || !!el.closest('.listing')
 
@@ -318,12 +457,10 @@ export default memo(function Library(): JSX.Element {
           let score = Infinity
 
           if (e.key === 'ArrowUp' && rect.top < activeRect.top - 5) {
-            // Acha a linha que está VISUALMENTE logo acima na tela
             const dy = Math.max(0, activeRect.top - rect.bottom)
             const dx = Math.abs(activeCX - cx)
             score = dy * 20 + dx
           } else if (e.key === 'ArrowDown' && rect.top > activeRect.top + 5) {
-            // Acha a linha que está VISUALMENTE logo abaixo na tela
             const dy = Math.max(0, rect.top - activeRect.bottom)
             const dx = Math.abs(activeCX - cx)
             score = dy * 20 + dx
@@ -336,15 +473,17 @@ export default memo(function Library(): JSX.Element {
         })
 
         if (bestMatch) {
-          (bestMatch as HTMLElement).focus()
+          ;(bestMatch as HTMLElement).focus()
           if (
             (bestMatch as HTMLElement).classList.contains('gameCard') ||
             (bestMatch as HTMLElement).classList.contains('gameListItem')
           ) {
-            (bestMatch as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            ;(bestMatch as HTMLElement).scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest'
+            })
           }
         } else if (e.key === 'ArrowUp' && isGameCard) {
-          // Fallback de segurança raríssimo
           const topBtn = document.querySelector(
             '.Header input, .Header button'
           ) as HTMLElement
