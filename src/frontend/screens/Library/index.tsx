@@ -93,20 +93,23 @@ export default memo(function Library(): JSX.Element {
   }, [cardZoom])
 
   // ====================================================================
-  // O FANTASMA SINCRONIZADO (Rastreador Independente de Menu das capas de jogos - aqui você pode trocar as cores)
+  // O FANTASMA SINCRONIZADO (Rastreador Independente de Menu)
   // ====================================================================
   useEffect(() => {
     const overlay = document.createElement('div')
     overlay.id = 'heroic-menu-phantom-box'
     overlay.style.position = 'fixed'
-    overlay.style.border = '2px solid #b6b6b666' // Borda verde tática
-    overlay.style.backgroundColor = 'hsla(0, 0%, 71%, 0.40)' // Preenchimento verde
+
+    // Suas cores cinzas customizadas mantidas aqui!
+    overlay.style.border = '2px solid #A9A9A9'
+    overlay.style.backgroundColor = 'rgba(128, 128, 128, 0.4)'
+
     overlay.style.borderRadius = '4px'
     overlay.style.pointerEvents = 'none'
     overlay.style.zIndex = '9999999'
-    overlay.style.transition = 'top 0.05s, left 0.05s' // Pulo suave entre itens
+    overlay.style.transition = 'top 0.05s, left 0.05s'
     overlay.style.display = 'none'
-    overlay.style.boxShadow = '0 0 10px rgba(76, 175, 79, 0)'
+    overlay.style.boxShadow = '0 0 10px rgba(128, 128, 128, 0.5)'
     document.body.appendChild(overlay)
 
     let menuIndex = 0
@@ -123,7 +126,7 @@ export default memo(function Library(): JSX.Element {
           style.opacity !== '0'
         )
       })
-      return menus[menus.length - 1] // Pega o menu mais alto (se houver sobreposição)
+      return menus[menus.length - 1]
     }
 
     const getMenuItems = (menu: Element) => {
@@ -132,7 +135,6 @@ export default memo(function Library(): JSX.Element {
           '.contexify_item, .react-contexify__item, [role="menuitem"]'
         )
       ).filter((el) => {
-        // Ignora linhas separadoras e itens desativados
         if (
           el.hasAttribute('disabled') ||
           el.classList.contains('contexify_separator') ||
@@ -152,7 +154,6 @@ export default memo(function Library(): JSX.Element {
         return
       }
 
-      // Se um menu novo acabou de abrir, reseta o ponteiro para o primeiro item
       if (menu !== lastMenuNode) {
         menuIndex = 0
         lastMenuNode = menu
@@ -161,12 +162,10 @@ export default memo(function Library(): JSX.Element {
       const items = getMenuItems(menu)
       if (items.length === 0) return
 
-      // Faz o ponteiro dar a volta se passar dos limites (Looping)
       if (menuIndex < 0) menuIndex = items.length - 1
       if (menuIndex >= items.length) menuIndex = 0
 
       const activeItem = items[menuIndex]
-      // Tenta pegar o conteúdo de texto para a caixa ficar do tamanho exato da palavra
       const contentNode =
         activeItem.querySelector(
           '.contexify_itemContent, .react-contexify__item__content'
@@ -185,7 +184,6 @@ export default memo(function Library(): JSX.Element {
     const handleMenuNav = (e: KeyboardEvent) => {
       const menu = getOpenMenu()
       if (menu) {
-        // Intercepta as setas e move o nosso ponteiro artificial
         if (e.key === 'ArrowDown') {
           menuIndex++
           updatePhantomBox()
@@ -196,7 +194,6 @@ export default memo(function Library(): JSX.Element {
       }
     }
 
-    // Sincroniza o ponteiro caso você decida usar o mouse de repente
     const handleMouseMove = (e: MouseEvent) => {
       const menu = getOpenMenu()
       if (!menu) return
@@ -212,7 +209,6 @@ export default memo(function Library(): JSX.Element {
 
     window.addEventListener('keydown', handleMenuNav, { capture: true })
     window.addEventListener('mousemove', handleMouseMove, { capture: true })
-    // Roda um motor rápido para garantir que a caixa persiga o menu se a tela der scroll
     const interval = setInterval(updatePhantomBox, 50)
 
     return () => {
@@ -231,7 +227,6 @@ export default memo(function Library(): JSX.Element {
   // ====================================================================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 🚨 TRAVA DE SEGURANÇA: Se houver um menu aberto, DESLIGA a navegação de capas!
       const isMenuOpen = document.querySelector(
         '.contexify, .react-contexify, [role="menu"]'
       )
@@ -379,22 +374,43 @@ export default memo(function Library(): JSX.Element {
             e.preventDefault()
             e.stopPropagation()
             const nextIndex = currentIndex + columns
+
+            // LÓGICA CORRIGIDA PARA LINHAS INCOMPLETAS (Impede cair pro zoom antes da hora)
             if (nextIndex < allCards.length) {
+              // Existe um jogo perfeitamente embaixo
               allCards[nextIndex].focus()
               allCards[nextIndex].scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
               })
             } else {
-              const btn = document.getElementById('backToTopBtn')
-              const zoomBtn = document.getElementById('zoom-minus-btn')
-              if (btn && window.getComputedStyle(btn).visibility === 'visible')
-                btn.focus()
-              else if (
-                zoomBtn &&
-                window.getComputedStyle(zoomBtn).display !== 'none'
-              )
-                zoomBtn.focus()
+              // Descobre o índice onde começa a ÚLTIMA linha da grade
+              const firstItemOfLastRow =
+                Math.floor((allCards.length - 1) / columns) * columns
+
+              if (currentIndex < firstItemOfLastRow) {
+                // Se estamos numa linha acima da última, então a linha de baixo existe,
+                // só é mais curta! Pula para o último jogo disponível nela.
+                allCards[allCards.length - 1].focus()
+                allCards[allCards.length - 1].scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'nearest'
+                })
+              } else {
+                // Agora sim, já estamos na última linha e não tem mais nada abaixo. Vai pro Zoom.
+                const btn = document.getElementById('backToTopBtn')
+                const zoomBtn = document.getElementById('zoom-minus-btn')
+                if (
+                  btn &&
+                  window.getComputedStyle(btn).visibility === 'visible'
+                )
+                  btn.focus()
+                else if (
+                  zoomBtn &&
+                  window.getComputedStyle(zoomBtn).display !== 'none'
+                )
+                  zoomBtn.focus()
+              }
             }
             return
           }
