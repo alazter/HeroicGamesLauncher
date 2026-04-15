@@ -93,14 +93,13 @@ export default memo(function Library(): JSX.Element {
   }, [cardZoom])
 
   // ====================================================================
-  // O FANTASMA SINCRONIZADO (Rastreador Independente de Menu)
+  // O FANTASMA SINCRONIZADO (Menu Contextual)
   // ====================================================================
   useEffect(() => {
     const overlay = document.createElement('div')
     overlay.id = 'heroic-menu-phantom-box'
     overlay.style.position = 'fixed'
 
-    // Suas cores cinzas customizadas mantidas aqui!
     overlay.style.border = '2px solid #A9A9A9'
     overlay.style.backgroundColor = 'rgba(128, 128, 128, 0.4)'
 
@@ -223,19 +222,15 @@ export default memo(function Library(): JSX.Element {
   // ====================================================================
 
   // ====================================================================
-  // NAVEGAÇÃO CIRÚRGICA: SCANNER GEOMÉTRICO BLINDADO
+  // NAVEGAÇÃO MOTOR BRUTO: COM PROTEÇÃO PARA A BARRA LATERAL
   // ====================================================================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMenuOpen = document.querySelector(
         '.contexify, .react-contexify, [role="menu"]'
       )
-      if (
-        isMenuOpen &&
-        window.getComputedStyle(isMenuOpen).display !== 'none'
-      ) {
+      if (isMenuOpen && window.getComputedStyle(isMenuOpen).display !== 'none')
         return
-      }
 
       if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key))
         return
@@ -243,9 +238,35 @@ export default memo(function Library(): JSX.Element {
       const active = document.activeElement as HTMLElement
       if (!active) return
 
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+      const activeRect = active.getBoundingClientRect()
+
+      // Proteção para inputs
+      if (['INPUT', 'TEXTAREA'].includes(active.tagName)) {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') return
       }
+      if (
+        ['SELECT'].includes(active.tagName) ||
+        active.getAttribute('role') === 'combobox'
+      ) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') return
+      }
+
+      // Função que pega todos os interativos
+      const getFocusables = () =>
+        Array.from(
+          document.querySelectorAll(
+            'button, select, input, a, [role="button"], [role="checkbox"], [role="combobox"], [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => {
+          const rect = el.getBoundingClientRect()
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            window.getComputedStyle(el).display !== 'none' &&
+            window.getComputedStyle(el).visibility !== 'hidden' &&
+            !el.hasAttribute('disabled')
+          )
+        }) as HTMLElement[]
 
       const isGameCard =
         active.classList.contains('gameCard') ||
@@ -253,23 +274,95 @@ export default memo(function Library(): JSX.Element {
       const isInTopArea =
         !!active.closest('.Header') ||
         !!active.closest('.listing > div:first-child')
-      const isFloatingBtn = [
-        'zoom-minus-btn',
-        'zoom-plus-btn',
-        'backToTopBtn'
-      ].includes(active.id)
+      const isFloatingBtn =
+        !!active.closest('#zoom-controls-container') ||
+        active.id === 'backToTopBtn'
 
+      // ====================================================================
+      // LÓGICA DA BARRA DE EDIÇÃO EM MASSA
+      // (Ignorando completamente o lado esquerdo da tela / Sidebar)
+      // ====================================================================
+      const isInsideBulkBar =
+        !isGameCard &&
+        !isInTopArea &&
+        !isFloatingBtn &&
+        activeRect.top > window.innerHeight * 0.5 &&
+        activeRect.left > 200
+
+      if (isInsideBulkBar) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          e.stopPropagation()
+
+          const barElements = getFocusables()
+            .filter(
+              (el) =>
+                !el.closest('.gameCard') &&
+                !el.closest('.gameListItem') &&
+                !el.closest('#zoom-controls-container') &&
+                el.id !== 'backToTopBtn' &&
+                el.getBoundingClientRect().top > window.innerHeight * 0.5 &&
+                el.getBoundingClientRect().left > 200 // <- Proteção da Sidebar
+            )
+            .sort(
+              (a, b) =>
+                a.getBoundingClientRect().left - b.getBoundingClientRect().left
+            )
+
+          const idx = barElements.indexOf(active)
+          if (
+            e.key === 'ArrowRight' &&
+            idx !== -1 &&
+            idx < barElements.length - 1
+          ) {
+            barElements[idx + 1].focus({ preventScroll: true })
+          } else if (e.key === 'ArrowLeft' && idx > 0) {
+            barElements[idx - 1].focus({ preventScroll: true })
+          }
+          return
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          e.stopPropagation()
+          const cards = Array.from(
+            document.querySelectorAll('.gameCard, .gameListItem')
+          ).filter(
+            (el) => window.getComputedStyle(el).display !== 'none'
+          ) as HTMLElement[]
+          if (cards.length) {
+            cards[cards.length - 1].focus({ preventScroll: true })
+            cards[cards.length - 1].scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest'
+            })
+          }
+          return
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          e.stopPropagation()
+          return // Bloqueia descer mais para não fugir
+        }
+      }
+
+      // ====================================================================
+      // BOTÕES FLUTUANTES (ZOOM E TOPO)
+      // ====================================================================
       if (isFloatingBtn) {
         if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
           e.preventDefault()
           e.stopPropagation()
-          document.getElementById('zoom-plus-btn')?.focus()
+          document
+            .getElementById('zoom-plus-btn')
+            ?.focus({ preventScroll: true })
           return
         }
         if (active.id === 'zoom-plus-btn' && e.key === 'ArrowLeft') {
           e.preventDefault()
           e.stopPropagation()
-          document.getElementById('zoom-minus-btn')?.focus()
+          document
+            .getElementById('zoom-minus-btn')
+            ?.focus({ preventScroll: true })
           return
         }
         if (e.key === 'ArrowUp') {
@@ -277,19 +370,17 @@ export default memo(function Library(): JSX.Element {
           e.stopPropagation()
           const backToTop = document.getElementById('backToTopBtn')
           if (
-            active.id.includes('zoom') &&
+            active.closest('#zoom-controls-container') &&
             backToTop &&
             window.getComputedStyle(backToTop).visibility === 'visible'
           ) {
-            backToTop.focus()
+            backToTop.focus({ preventScroll: true })
             return
           }
           const cards = Array.from(
             document.querySelectorAll('.gameCard, .gameListItem')
           ).filter(
-            (el) =>
-              window.getComputedStyle(el).display !== 'none' &&
-              window.getComputedStyle(el).visibility !== 'hidden'
+            (el) => window.getComputedStyle(el).display !== 'none'
           ) as HTMLElement[]
           if (cards.length) cards[cards.length - 1].focus()
           return
@@ -298,7 +389,8 @@ export default memo(function Library(): JSX.Element {
           e.preventDefault()
           e.stopPropagation()
           const z = document.getElementById('zoom-minus-btn')
-          if (z && window.getComputedStyle(z).display !== 'none') z.focus()
+          if (z && window.getComputedStyle(z).display !== 'none')
+            z.focus({ preventScroll: true })
           return
         }
         if (e.key === 'ArrowLeft') {
@@ -307,22 +399,21 @@ export default memo(function Library(): JSX.Element {
           const cards = Array.from(
             document.querySelectorAll('.gameCard, .gameListItem')
           ).filter(
-            (el) =>
-              window.getComputedStyle(el).display !== 'none' &&
-              window.getComputedStyle(el).visibility !== 'hidden'
+            (el) => window.getComputedStyle(el).display !== 'none'
           ) as HTMLElement[]
           if (cards.length) cards[cards.length - 1].focus()
           return
         }
       }
 
+      // ====================================================================
+      // GRADE DE JOGOS E A PONTE PARA O BOTÃO APLICAR
+      // ====================================================================
       if (isGameCard) {
         const allCards = Array.from(
           document.querySelectorAll('.gameCard, .gameListItem')
         ).filter(
-          (el) =>
-            window.getComputedStyle(el).display !== 'none' &&
-            window.getComputedStyle(el).visibility !== 'hidden'
+          (el) => window.getComputedStyle(el).display !== 'none'
         ) as HTMLElement[]
         const currentIndex = allCards.indexOf(active)
 
@@ -349,7 +440,7 @@ export default memo(function Library(): JSX.Element {
             if (currentIndex + 1 < allCards.length) {
               e.preventDefault()
               e.stopPropagation()
-              allCards[currentIndex + 1].focus()
+              allCards[currentIndex + 1].focus({ preventScroll: true })
               allCards[currentIndex + 1].scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
@@ -361,12 +452,11 @@ export default memo(function Library(): JSX.Element {
             if (currentIndex % columns !== 0) {
               e.preventDefault()
               e.stopPropagation()
-              allCards[currentIndex - 1].focus()
+              allCards[currentIndex - 1].focus({ preventScroll: true })
               allCards[currentIndex - 1].scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
               })
-              return
             }
             return
           }
@@ -375,41 +465,60 @@ export default memo(function Library(): JSX.Element {
             e.stopPropagation()
             const nextIndex = currentIndex + columns
 
-            // LÓGICA CORRIGIDA PARA LINHAS INCOMPLETAS (Impede cair pro zoom antes da hora)
             if (nextIndex < allCards.length) {
-              // Existe um jogo perfeitamente embaixo
-              allCards[nextIndex].focus()
+              allCards[nextIndex].focus({ preventScroll: true })
               allCards[nextIndex].scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
               })
             } else {
-              // Descobre o índice onde começa a ÚLTIMA linha da grade
               const firstItemOfLastRow =
                 Math.floor((allCards.length - 1) / columns) * columns
 
               if (currentIndex < firstItemOfLastRow) {
-                // Se estamos numa linha acima da última, então a linha de baixo existe,
-                // só é mais curta! Pula para o último jogo disponível nela.
-                allCards[allCards.length - 1].focus()
+                allCards[allCards.length - 1].focus({ preventScroll: true })
                 allCards[allCards.length - 1].scrollIntoView({
                   behavior: 'smooth',
                   block: 'nearest'
                 })
               } else {
-                // Agora sim, já estamos na última linha e não tem mais nada abaixo. Vai pro Zoom.
+                // ===== O PULO DO GATO REVISADO =====
+                const elementsBelow = getFocusables().filter(
+                  (el) =>
+                    el.getBoundingClientRect().top > activeRect.bottom - 20 &&
+                    el.getBoundingClientRect().left > 200 && // <-- IGNORA O KO-FI E A SIDEBAR
+                    !el.closest('.gameCard') &&
+                    !el.closest('.gameListItem') &&
+                    !el.closest('#zoom-controls-container') &&
+                    el.id !== 'backToTopBtn'
+                )
+
+                if (elementsBelow.length > 0) {
+                  elementsBelow.sort(
+                    (a, b) =>
+                      a.getBoundingClientRect().top -
+                        b.getBoundingClientRect().top ||
+                      a.getBoundingClientRect().left -
+                        b.getBoundingClientRect().left
+                  )
+                  elementsBelow[0].focus({ preventScroll: true })
+                  return
+                }
+                // ====================================
+
+                // Caminho normal se não existir barra de edição: vai pro zoom
                 const btn = document.getElementById('backToTopBtn')
                 const zoomBtn = document.getElementById('zoom-minus-btn')
                 if (
                   btn &&
                   window.getComputedStyle(btn).visibility === 'visible'
                 )
-                  btn.focus()
+                  btn.focus({ preventScroll: true })
                 else if (
                   zoomBtn &&
                   window.getComputedStyle(zoomBtn).display !== 'none'
                 )
-                  zoomBtn.focus()
+                  zoomBtn.focus({ preventScroll: true })
               }
             }
             return
@@ -418,7 +527,7 @@ export default memo(function Library(): JSX.Element {
             if (currentIndex >= columns) {
               e.preventDefault()
               e.stopPropagation()
-              allCards[currentIndex - columns].focus()
+              allCards[currentIndex - columns].focus({ preventScroll: true })
               allCards[currentIndex - columns].scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
@@ -429,6 +538,9 @@ export default memo(function Library(): JSX.Element {
         }
       }
 
+      // ====================================================================
+      // LÓGICA DO TOPO (Retornar do cabeçalho)
+      // ====================================================================
       const runGeometry = isInTopArea || (isGameCard && e.key === 'ArrowUp')
 
       if (runGeometry && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -436,41 +548,25 @@ export default memo(function Library(): JSX.Element {
         e.stopPropagation()
         e.stopImmediatePropagation()
 
-        const focusables = Array.from(
-          document.querySelectorAll(
-            'button, input, a, select, [tabindex]:not([tabindex="-1"]), [data-sn-focusable="true"], .gameCard, .gameListItem'
-          )
-        ).filter((el) => {
-          const rect = el.getBoundingClientRect()
-          const style = window.getComputedStyle(el)
-
-          const isInsideMainArea =
-            !!el.closest('.Header') || !!el.closest('.listing')
-
-          return (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            style.visibility !== 'hidden' &&
-            style.display !== 'none' &&
-            !(el as HTMLInputElement).disabled &&
-            el !== active &&
-            !['zoom-minus-btn', 'zoom-plus-btn', 'backToTopBtn'].includes(
-              el.id
-            ) &&
-            isInsideMainArea
-          )
-        }) as HTMLElement[]
-
-        const activeRect = active.getBoundingClientRect()
         const activeCX = activeRect.left + activeRect.width / 2
 
         let bestMatch: HTMLElement | null = null
         let bestScore = Infinity
 
-        focusables.forEach((el) => {
+        getFocusables().forEach((el) => {
           const rect = el.getBoundingClientRect()
           const cx = rect.left + rect.width / 2
           let score = Infinity
+          const isInsideMainArea =
+            !!el.closest('.Header') || !!el.closest('.listing')
+
+          if (
+            !isInsideMainArea ||
+            el === active ||
+            el.id.includes('zoom') ||
+            el.id === 'backToTopBtn'
+          )
+            return
 
           if (e.key === 'ArrowUp' && rect.top < activeRect.top - 5) {
             const dy = Math.max(0, activeRect.top - rect.bottom)
@@ -489,7 +585,7 @@ export default memo(function Library(): JSX.Element {
         })
 
         if (bestMatch) {
-          ;(bestMatch as HTMLElement).focus()
+          ;(bestMatch as HTMLElement).focus({ preventScroll: true })
           if (
             (bestMatch as HTMLElement).classList.contains('gameCard') ||
             (bestMatch as HTMLElement).classList.contains('gameListItem')
@@ -503,7 +599,7 @@ export default memo(function Library(): JSX.Element {
           const topBtn = document.querySelector(
             '.Header input, .Header button'
           ) as HTMLElement
-          if (topBtn) topBtn.focus()
+          if (topBtn) topBtn.focus({ preventScroll: true })
         }
       }
     }
@@ -1260,6 +1356,7 @@ export default memo(function Library(): JSX.Element {
 
       {layout === 'grid' && (
         <div
+          id="zoom-controls-container"
           style={{
             position: 'fixed',
             bottom: '5px',
