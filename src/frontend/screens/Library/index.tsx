@@ -1490,6 +1490,15 @@ export default memo(function Library(): JSX.Element {
             .gameCard:focus-within {
               z-index: 100 !important;
             }
+            
+            /* Indicador de foco brutal para Dropdowns, Inputs e Checkboxes */
+            select:focus, [role="combobox"]:focus, input:focus, [role="checkbox"]:focus {
+              outline: 3px solid #4CAF50 !important;
+              outline-offset: 2px !important;
+              box-shadow: 0 0 10px rgba(76, 175, 80, 0.8) !important;
+              border-radius: 4px !important;
+              transition: all 0.2s ease-in-out !important;
+            }
           `}</style>
         </div>
       )}
