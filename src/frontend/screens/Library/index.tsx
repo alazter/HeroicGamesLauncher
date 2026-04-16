@@ -527,10 +527,9 @@ export default memo(function Library(): JSX.Element {
     return () =>
       window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [])
-  // ====================================================================
 
   // ====================================================================
-  // MÓDULO DOS BOTÕES B, X e Y (Tratamento Definitivo para o React)
+  // MÓDULO DOS BOTÕES B, X e Y (O MOTOR DEFINITIVO)
   // ====================================================================
   useEffect(() => {
     let reqId: number
@@ -538,107 +537,59 @@ export default memo(function Library(): JSX.Element {
     let lastB = false
     let lastY = false
 
-    // TRAVA ANTI-CRASH: Impede o Loop Infinito do botão B
-    let isSimulatingEscape = false
-
     const actionClearSelectionB = () => {
-      // Se já está rodando a simulação do escape, aborta para não travar
-      if (isSimulatingEscape) return
-      isSimulatingEscape = true
-
-      try {
-        // 1. A PROTEÇÃO DE FERROLHO: Evita que o B saia clicando no nada ou abra o Tour
-        const isEditingMode =
-          document.querySelectorAll('input[type="checkbox"]').length > 0
-        const checkedInputs = document.querySelectorAll(
-          'input[type="checkbox"]:checked'
-        )
-        const selectedCards = document.querySelectorAll(
-          '.gameCard.selected, .gameListItem.selected'
-        )
-
-        // Se a biblioteca estiver no estado normal (sem seleção e sem modo de edição visível), aborta na hora.
-        if (
-          !isEditingMode &&
-          checkedInputs.length === 0 &&
-          selectedCards.length === 0
-        ) {
-          return
-        }
-
-        // 2. A DESMARCAÇÃO CIRÚRGICA: Limpa a seleção forçando clique nos inputs marcados
-        if (checkedInputs.length > 0) {
-          checkedInputs.forEach((input) => {
-            ;(input as HTMLElement).click()
-          })
-        } else if (selectedCards.length > 0) {
-          // Fallback seguro caso o Heroic esteja controlando a seleção pelas classes das divs e não pelos inputs
-          selectedCards.forEach((card) => {
-            ;(card as HTMLElement).click()
-          })
-        }
-
-        // 3. O CANHÃO DE ESCAPE SEGURO (Somente envia a tecla pro documento, sem procurar botões suspeitos)
-        const escEvent = new KeyboardEvent('keydown', {
-          key: 'Escape',
-          code: 'Escape',
-          keyCode: 27,
-          which: 27,
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })
-        document.dispatchEvent(escEvent)
-        if (document.activeElement) {
-          document.activeElement.dispatchEvent(escEvent)
-        }
-      } finally {
-        // Remove a trava de segurança 150ms após os eventos
-        setTimeout(() => {
-          isSimulatingEscape = false
-        }, 150)
+      const active = document.activeElement as HTMLElement
+      if (
+        active &&
+        (active.classList.contains('gameCard') ||
+          active.classList.contains('gameListItem'))
+      ) {
+        active.blur()
+        document.body.focus()
       }
+
+      const rootElement = document.querySelector('#root') || document.body
+
+      const events = ['keydown', 'keypress', 'keyup']
+      events.forEach((eventType) => {
+        const enterEvent = new KeyboardEvent(eventType, {
+          key: 'Enter',
+          code: 'Enter',
+          keyCode: 13,
+          which: 13,
+          bubbles: true,
+          composed: true,
+          cancelable: true
+        })
+        rootElement.dispatchEvent(enterEvent)
+      })
     }
 
     const actionFocusStoreX = () => {
-      const inputs = Array.from(
+      const dropdowns = Array.from(
         document.querySelectorAll(
-          'select, [role="combobox"], [class*="select__control"], input[type="text"]'
+          '[class*="select__control"], select, [role="combobox"]'
         )
-      ).filter((i) => {
-        const rect = i.getBoundingClientRect()
+      ).filter((el) => {
+        const rect = el.getBoundingClientRect()
         return (
-          rect.top > window.innerHeight * 0.5 &&
-          !i.closest('.Header') &&
-          window.getComputedStyle(i).display !== 'none'
+          rect.top > window.innerHeight * 0.4 &&
+          !el.closest('.Header') &&
+          rect.width > 0
         )
       })
 
-      if (inputs.length > 0) {
-        inputs.sort(
+      if (dropdowns.length > 0) {
+        dropdowns.sort(
           (a, b) =>
             a.getBoundingClientRect().left - b.getBoundingClientRect().left
         )
-        const target = inputs[inputs.length - 1] as HTMLElement
+        const target = dropdowns[dropdowns.length - 1] as HTMLElement
 
-        // O TRUQUE PARA O SPATIAL NAVIGATION (SN):
-        target.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
-        target.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
-        target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
-
-        // Foca pro navegador ver
-        target.focus({ preventScroll: true })
-
-        target.dispatchEvent(
-          new MouseEvent('mousedown', { bubbles: true, cancelable: true })
-        )
-        target.dispatchEvent(
-          new MouseEvent('mouseup', { bubbles: true, cancelable: true })
-        )
-        target.click()
-
-        setTimeout(() => {
-          target.dispatchEvent(
+        const innerInput = target.querySelector('input')
+        if (innerInput) {
+          innerInput.focus({ preventScroll: true })
+          innerInput.dispatchEvent(
             new KeyboardEvent('keydown', {
               key: 'ArrowDown',
               code: 'ArrowDown',
@@ -646,13 +597,15 @@ export default memo(function Library(): JSX.Element {
               bubbles: true
             })
           )
-        }, 50)
+        } else {
+          target.focus({ preventScroll: true })
+          target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+        }
       }
     }
 
     const actionPlayY = () => {
       const active = document.activeElement as HTMLElement
-      // Pega o jogo que está focado e manda um "Enter" nele para forçar o Play
       if (
         active &&
         (active.classList.contains('gameCard') ||
@@ -671,7 +624,6 @@ export default memo(function Library(): JSX.Element {
     }
 
     const handleKeyboard = (e: KeyboardEvent) => {
-      // PROTEÇÃO ANTI-CRASH: Se o evento não for confiável (gerado por nosso script em vez do teclado físico), ignore!
       if (!e.isTrusted) return
 
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || ''))
@@ -702,9 +654,9 @@ export default memo(function Library(): JSX.Element {
 
         for (const gp of gamepads) {
           if (gp && gp.buttons) {
-            if (gp.buttons[2] && gp.buttons[2].pressed) gpX = true
-            if (gp.buttons[1] && gp.buttons[1].pressed) gpB = true
-            if (gp.buttons[3] && gp.buttons[3].pressed) gpY = true
+            if (gp.buttons[2] && gp.buttons[2].pressed) gpX = true // X = 2
+            if (gp.buttons[1] && gp.buttons[1].pressed) gpB = true // B = 1
+            if (gp.buttons[3] && gp.buttons[3].pressed) gpY = true // Y = 3
           }
         }
 
@@ -841,6 +793,28 @@ export default memo(function Library(): JSX.Element {
   }
 
   const [showCategories, setShowCategories] = useState(false)
+
+  // ====================================================================
+  // NOVO ESCUTADOR PARA O FILTRO LIMPO (Sem tocar no Heroic original)
+  // ====================================================================
+  const [showUnclassifiedOnly, setShowUnclassifiedOnly] = useState(false)
+
+  useEffect(() => {
+    const handleUnclassifiedFilter = (e: Event) => {
+      const customEvent = e as CustomEvent<{ active: boolean }>
+      setShowUnclassifiedOnly(customEvent.detail?.active || false)
+    }
+    window.addEventListener(
+      'heroicToggleUnclassifiedFilter',
+      handleUnclassifiedFilter
+    )
+    return () =>
+      window.removeEventListener(
+        'heroicToggleUnclassifiedFilter',
+        handleUnclassifiedFilter
+      )
+  }, [])
+  // ====================================================================
 
   const [showAlphabetFilter, setShowAlphabetFilter] = useState<boolean>(
     JSON.parse(storage.getItem('showAlphabetFilter') || 'true') as boolean
@@ -1257,6 +1231,26 @@ export default memo(function Library(): JSX.Element {
       })
     }
 
+    // ====================================================================
+    // O FILTRO INDEPENDENTE QUE DEIXA O HEROIC EM PAZ
+    // ====================================================================
+    if (showUnclassifiedOnly) {
+      const safeCategoriesList =
+        customCategories && customCategories.list ? customCategories.list : {}
+      const categorizedGames = new Set(Object.values(safeCategoriesList).flat())
+
+      library = library.filter((game) => {
+        const explicitlyAssignedStore = assignments[game.app_name]
+        const gameId = `${game.app_name}_${game.runner}`
+
+        const hasCategory = categorizedGames.has(gameId)
+        const hasAssignment = !!explicitlyAssignedStore
+
+        return !hasCategory && !hasAssignment
+      })
+    }
+    // ====================================================================
+
     if (activeStoreFilter) {
       library = library.filter((game) => {
         const explicitlyAssignedStore = assignments[game.app_name]
@@ -1305,7 +1299,9 @@ export default memo(function Library(): JSX.Element {
     sortInstalled,
     installing,
     activeStoreFilter,
-    assignments
+    assignments,
+    customCategories,
+    showUnclassifiedOnly // <--- Agora nosso filtro brinca isolado
   ])
 
   useEffect(() => {
