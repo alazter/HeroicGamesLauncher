@@ -222,7 +222,7 @@ export default memo(function Library(): JSX.Element {
   // ====================================================================
 
   // ====================================================================
-  // NAVEGAÇÃO MOTOR BRUTO: COM PROTEÇÃO PARA A BARRA LATERAL
+  // SEU MOTOR ORIGINAL DE NAVEGAÇÃO DE SETAS (INTACTO E PROTEGIDO)
   // ====================================================================
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -232,15 +232,14 @@ export default memo(function Library(): JSX.Element {
       if (isMenuOpen && window.getComputedStyle(isMenuOpen).display !== 'none')
         return
 
+      const active = document.activeElement as HTMLElement
       if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key))
         return
 
-      const active = document.activeElement as HTMLElement
       if (!active) return
 
       const activeRect = active.getBoundingClientRect()
 
-      // Proteção para inputs
       if (['INPUT', 'TEXTAREA'].includes(active.tagName)) {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') return
       }
@@ -251,7 +250,6 @@ export default memo(function Library(): JSX.Element {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') return
       }
 
-      // Função que pega todos os interativos
       const getFocusables = () =>
         Array.from(
           document.querySelectorAll(
@@ -278,76 +276,6 @@ export default memo(function Library(): JSX.Element {
         !!active.closest('#zoom-controls-container') ||
         active.id === 'backToTopBtn'
 
-      // ====================================================================
-      // LÓGICA DA BARRA DE EDIÇÃO EM MASSA
-      // (Ignorando completamente o lado esquerdo da tela / Sidebar)
-      // ====================================================================
-      const isInsideBulkBar =
-        !isGameCard &&
-        !isInTopArea &&
-        !isFloatingBtn &&
-        activeRect.top > window.innerHeight * 0.5 &&
-        activeRect.left > 200
-
-      if (isInsideBulkBar) {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-          e.preventDefault()
-          e.stopPropagation()
-
-          const barElements = getFocusables()
-            .filter(
-              (el) =>
-                !el.closest('.gameCard') &&
-                !el.closest('.gameListItem') &&
-                !el.closest('#zoom-controls-container') &&
-                el.id !== 'backToTopBtn' &&
-                el.getBoundingClientRect().top > window.innerHeight * 0.5 &&
-                el.getBoundingClientRect().left > 200 // <- Proteção da Sidebar
-            )
-            .sort(
-              (a, b) =>
-                a.getBoundingClientRect().left - b.getBoundingClientRect().left
-            )
-
-          const idx = barElements.indexOf(active)
-          if (
-            e.key === 'ArrowRight' &&
-            idx !== -1 &&
-            idx < barElements.length - 1
-          ) {
-            barElements[idx + 1].focus({ preventScroll: true })
-          } else if (e.key === 'ArrowLeft' && idx > 0) {
-            barElements[idx - 1].focus({ preventScroll: true })
-          }
-          return
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault()
-          e.stopPropagation()
-          const cards = Array.from(
-            document.querySelectorAll('.gameCard, .gameListItem')
-          ).filter(
-            (el) => window.getComputedStyle(el).display !== 'none'
-          ) as HTMLElement[]
-          if (cards.length) {
-            cards[cards.length - 1].focus({ preventScroll: true })
-            cards[cards.length - 1].scrollIntoView({
-              behavior: 'smooth',
-              block: 'nearest'
-            })
-          }
-          return
-        }
-        if (e.key === 'ArrowDown') {
-          e.preventDefault()
-          e.stopPropagation()
-          return // Bloqueia descer mais para não fugir
-        }
-      }
-
-      // ====================================================================
-      // BOTÕES FLUTUANTES (ZOOM E TOPO)
-      // ====================================================================
       if (isFloatingBtn) {
         if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
           e.preventDefault()
@@ -406,9 +334,6 @@ export default memo(function Library(): JSX.Element {
         }
       }
 
-      // ====================================================================
-      // GRADE DE JOGOS E A PONTE PARA O BOTÃO APLICAR
-      // ====================================================================
       if (isGameCard) {
         const allCards = Array.from(
           document.querySelectorAll('.gameCard, .gameListItem')
@@ -482,11 +407,10 @@ export default memo(function Library(): JSX.Element {
                   block: 'nearest'
                 })
               } else {
-                // ===== O PULO DO GATO REVISADO =====
                 const elementsBelow = getFocusables().filter(
                   (el) =>
                     el.getBoundingClientRect().top > activeRect.bottom - 20 &&
-                    el.getBoundingClientRect().left > 200 && // <-- IGNORA O KO-FI E A SIDEBAR
+                    el.getBoundingClientRect().left > 200 &&
                     !el.closest('.gameCard') &&
                     !el.closest('.gameListItem') &&
                     !el.closest('#zoom-controls-container') &&
@@ -504,9 +428,7 @@ export default memo(function Library(): JSX.Element {
                   elementsBelow[0].focus({ preventScroll: true })
                   return
                 }
-                // ====================================
 
-                // Caminho normal se não existir barra de edição: vai pro zoom
                 const btn = document.getElementById('backToTopBtn')
                 const zoomBtn = document.getElementById('zoom-minus-btn')
                 if (
@@ -538,9 +460,6 @@ export default memo(function Library(): JSX.Element {
         }
       }
 
-      // ====================================================================
-      // LÓGICA DO TOPO (Retornar do cabeçalho)
-      // ====================================================================
       const runGeometry = isInTopArea || (isGameCard && e.key === 'ArrowUp')
 
       if (runGeometry && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -607,6 +526,206 @@ export default memo(function Library(): JSX.Element {
     window.addEventListener('keydown', handleKeyDown, { capture: true })
     return () =>
       window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [])
+  // ====================================================================
+
+  // ====================================================================
+  // MÓDULO DOS BOTÕES B, X e Y (Tratamento Definitivo para o React)
+  // ====================================================================
+  useEffect(() => {
+    let reqId: number
+    let lastX = false
+    let lastB = false
+    let lastY = false
+
+    // TRAVA ANTI-CRASH: Impede o Loop Infinito do botão B
+    let isSimulatingEscape = false
+
+    const actionClearSelectionB = () => {
+      // Se já está rodando a simulação do escape, aborta para não travar
+      if (isSimulatingEscape) return
+      isSimulatingEscape = true
+
+      try {
+        // 1. A PROTEÇÃO DE FERROLHO: Evita que o B saia clicando no nada ou abra o Tour
+        const isEditingMode =
+          document.querySelectorAll('input[type="checkbox"]').length > 0
+        const checkedInputs = document.querySelectorAll(
+          'input[type="checkbox"]:checked'
+        )
+        const selectedCards = document.querySelectorAll(
+          '.gameCard.selected, .gameListItem.selected'
+        )
+
+        // Se a biblioteca estiver no estado normal (sem seleção e sem modo de edição visível), aborta na hora.
+        if (
+          !isEditingMode &&
+          checkedInputs.length === 0 &&
+          selectedCards.length === 0
+        ) {
+          return
+        }
+
+        // 2. A DESMARCAÇÃO CIRÚRGICA: Limpa a seleção forçando clique nos inputs marcados
+        if (checkedInputs.length > 0) {
+          checkedInputs.forEach((input) => {
+            ;(input as HTMLElement).click()
+          })
+        } else if (selectedCards.length > 0) {
+          // Fallback seguro caso o Heroic esteja controlando a seleção pelas classes das divs e não pelos inputs
+          selectedCards.forEach((card) => {
+            ;(card as HTMLElement).click()
+          })
+        }
+
+        // 3. O CANHÃO DE ESCAPE SEGURO (Somente envia a tecla pro documento, sem procurar botões suspeitos)
+        const escEvent = new KeyboardEvent('keydown', {
+          key: 'Escape',
+          code: 'Escape',
+          keyCode: 27,
+          which: 27,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })
+        document.dispatchEvent(escEvent)
+        if (document.activeElement) {
+          document.activeElement.dispatchEvent(escEvent)
+        }
+      } finally {
+        // Remove a trava de segurança 150ms após os eventos
+        setTimeout(() => {
+          isSimulatingEscape = false
+        }, 150)
+      }
+    }
+
+    const actionFocusStoreX = () => {
+      const inputs = Array.from(
+        document.querySelectorAll(
+          'select, [role="combobox"], [class*="select__control"], input[type="text"]'
+        )
+      ).filter((i) => {
+        const rect = i.getBoundingClientRect()
+        return (
+          rect.top > window.innerHeight * 0.5 &&
+          !i.closest('.Header') &&
+          window.getComputedStyle(i).display !== 'none'
+        )
+      })
+
+      if (inputs.length > 0) {
+        inputs.sort(
+          (a, b) =>
+            a.getBoundingClientRect().left - b.getBoundingClientRect().left
+        )
+        const target = inputs[inputs.length - 1] as HTMLElement
+
+        // O TRUQUE PARA O SPATIAL NAVIGATION (SN):
+        target.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+        target.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+        target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+
+        // Foca pro navegador ver
+        target.focus({ preventScroll: true })
+
+        target.dispatchEvent(
+          new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+        )
+        target.dispatchEvent(
+          new MouseEvent('mouseup', { bubbles: true, cancelable: true })
+        )
+        target.click()
+
+        setTimeout(() => {
+          target.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              key: 'ArrowDown',
+              code: 'ArrowDown',
+              keyCode: 40,
+              bubbles: true
+            })
+          )
+        }, 50)
+      }
+    }
+
+    const actionPlayY = () => {
+      const active = document.activeElement as HTMLElement
+      // Pega o jogo que está focado e manda um "Enter" nele para forçar o Play
+      if (
+        active &&
+        (active.classList.contains('gameCard') ||
+          active.classList.contains('gameListItem') ||
+          active.hasAttribute('data-sn-focusable'))
+      ) {
+        active.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            bubbles: true
+          })
+        )
+      }
+    }
+
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // PROTEÇÃO ANTI-CRASH: Se o evento não for confiável (gerado por nosso script em vez do teclado físico), ignore!
+      if (!e.isTrusted) return
+
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || ''))
+        return
+
+      if (e.key.toLowerCase() === 'x') {
+        e.preventDefault()
+        actionFocusStoreX()
+      } else if (
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key.toLowerCase() === 'b'
+      ) {
+        e.preventDefault()
+        actionClearSelectionB()
+      } else if (e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        actionPlayY()
+      }
+    }
+
+    const pollGamepad = () => {
+      try {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : []
+        let gpX = false
+        let gpB = false
+        let gpY = false
+
+        for (const gp of gamepads) {
+          if (gp && gp.buttons) {
+            if (gp.buttons[2] && gp.buttons[2].pressed) gpX = true
+            if (gp.buttons[1] && gp.buttons[1].pressed) gpB = true
+            if (gp.buttons[3] && gp.buttons[3].pressed) gpY = true
+          }
+        }
+
+        if (gpB && !lastB) actionClearSelectionB()
+        if (gpX && !lastX) actionFocusStoreX()
+        if (gpY && !lastY) actionPlayY()
+
+        lastB = gpB
+        lastX = gpX
+        lastY = gpY
+      } catch (e) {}
+      reqId = requestAnimationFrame(pollGamepad)
+    }
+
+    window.addEventListener('keydown', handleKeyboard, { capture: true })
+    reqId = requestAnimationFrame(pollGamepad)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyboard, { capture: true })
+      cancelAnimationFrame(reqId)
+    }
   }, [])
   // ====================================================================
 
