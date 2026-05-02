@@ -667,7 +667,9 @@ export default memo(function Library(): JSX.Element {
         lastB = gpB
         lastX = gpX
         lastY = gpY
-      } catch (e) {}
+      } catch {
+        // Gamepad API not available or error polling
+      }
       reqId = requestAnimationFrame(pollGamepad)
     }
 
