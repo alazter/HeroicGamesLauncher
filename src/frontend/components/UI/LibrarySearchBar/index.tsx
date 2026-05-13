@@ -144,7 +144,7 @@ export default function LibrarySearchBar() {
       <style>
         {`
           [data-tour="library-search"] { width: 450px !important; min-width: 450px !important; flex-grow: 0 !important; }
-          [data-tour="library-search"] > div, [data-tour="library-search"] form, [data-tour="library-search"] input { width: 100% !important; max-width: 100% !important; min-width: 450px !important; }
+          [data-tour="library-search"] > div { width: 100% !important; max-width: 100% !important; }
         `}
       </style>
 
