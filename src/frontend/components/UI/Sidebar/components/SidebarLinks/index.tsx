@@ -268,14 +268,7 @@ export default function SidebarLinks() {
         dataTour="sidebar-docs"
       />
 
-      <div data-tour="sidebar-community">
-        <SidebarItem
-          elementType="button"
-          onClick={() => handleExternalLink(window.api.openGithubSponsorsPage)}
-          icon={faGithub}
-          label="GitHub Sponsors"
-        />
-      </div>
+
 
       <QuitButton dataTour="sidebar-quit" />
     </div>
