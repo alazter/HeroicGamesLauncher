@@ -67,15 +67,16 @@
   &__grids {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: var(--space-sm);
+    gap: var(--space-md);
     overflow-y: auto;
-    max-height: 52vh;
+    max-height: 62vh;
     padding-bottom: 1rem;
     width: 100%;
   }
 
   &__grid-item {
     cursor: pointer;
+    height: 195px;
     border-radius: 8px;
     overflow: hidden;
     aspect-ratio: 2/3;
@@ -99,10 +100,11 @@
 
   &--heroes &__grids {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    max-height: 52vh;
+    max-height: 62vh;
   }
 
   &--heroes &__grid-item {
+    height: 100px;
     aspect-ratio: 1600 / 650;
   }
 
