@@ -5,23 +5,18 @@ import {
   faStore,
   faUser,
   faUniversalAccess,
-  faCoffee,
   faUserAlt,
   faWineGlass,
   faBarsProgress,
   faTv,
-  faTags,
   faPaintBrush
 } from '@fortawesome/free-solid-svg-icons'
 import { useLocation } from 'react-router-dom'
 import { useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  faDiscord,
-  faGithub,
-  faPatreon
+  faGithub
 } from '@fortawesome/free-brands-svg-icons'
-import { openDiscordLink } from 'frontend/helpers'
 
 import ContextProvider from 'frontend/state/ContextProvider'
 import QuitButton from '../QuitButton'
@@ -169,12 +164,7 @@ export default function SidebarLinks() {
           </div>
         )}
       </div>
-      <SidebarItem
-        url="/discounts"
-        icon={faTags}
-        label={t('discounts.sidebar', 'Deals')}
-        dataTour="sidebar-discounts"
-      />
+
       <div className="divider" />
       <div className="SidebarItemWithSubmenu">
         <SidebarItem
@@ -280,27 +270,6 @@ export default function SidebarLinks() {
       />
 
       <div data-tour="sidebar-community">
-        <SidebarItem
-          elementType="button"
-          onClick={() => handleExternalLink(openDiscordLink)}
-          icon={faDiscord}
-          label={t('userselector.discord', 'Discord')}
-        />
-
-        <SidebarItem
-          elementType="button"
-          onClick={() => handleExternalLink(window.api.openPatreonPage)}
-          icon={faPatreon}
-          label="Patreon"
-        />
-
-        <SidebarItem
-          elementType="button"
-          onClick={() => handleExternalLink(window.api.openKofiPage)}
-          icon={faCoffee}
-          label="Ko-fi"
-        />
-
         <SidebarItem
           elementType="button"
           onClick={() => handleExternalLink(window.api.openGithubSponsorsPage)}
