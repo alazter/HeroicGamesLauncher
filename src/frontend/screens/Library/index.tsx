@@ -1163,11 +1163,14 @@ export default memo(function Library(): JSX.Element {
     try {
       const filteredLibrary = filterByPlatform(library)
       const searchableLibrary: SearchableGame[] = filteredLibrary.map(
-        (game) => ({
-          original: game,
-          title: game.title,
-          normalizedTitle: normalizeTitle(game.title)
-        })
+        (game) => {
+          const title = game.overrides?.title || game.title
+          return {
+            original: game,
+            title,
+            normalizedTitle: normalizeTitle(title)
+          }
+        }
       )
 
       const options = {
@@ -1226,9 +1229,10 @@ export default memo(function Library(): JSX.Element {
 
     if (alphabetFilterLetter) {
       library = library.filter((game) => {
-        if (!game.title) return false
+        const title = game.overrides?.title || game.title
+        if (!title) return false
 
-        const processedTitle = game.title.replace(/^the\s/i, '')
+        const processedTitle = title.replace(/^the\s/i, '')
         const firstCharMatch = processedTitle.match(/[a-zA-Z0-9]/)
         if (!firstCharMatch) return false
         const firstChar = firstCharMatch[0].toUpperCase()

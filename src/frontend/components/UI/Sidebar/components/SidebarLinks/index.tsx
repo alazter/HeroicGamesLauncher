@@ -1,18 +1,27 @@
 import {
+  faBookOpen,
   faGamepad,
   faSlidersH,
   faStore,
   faUser,
   faUniversalAccess,
+  faCoffee,
   faUserAlt,
   faWineGlass,
   faBarsProgress,
+  faTv,
+  faTags,
   faPaintBrush
 } from '@fortawesome/free-solid-svg-icons'
 import { useLocation } from 'react-router-dom'
 import { useContext } from 'react'
 import { useTranslation } from 'react-i18next'
-
+import {
+  faDiscord,
+  faGithub,
+  faPatreon
+} from '@fortawesome/free-brands-svg-icons'
+import { openDiscordLink } from 'frontend/helpers'
 
 import ContextProvider from 'frontend/state/ContextProvider'
 import QuitButton from '../QuitButton'
@@ -101,7 +110,14 @@ export default function SidebarLinks() {
 
   return (
     <div className="SidebarLinks Sidebar__section" data-tour="sidebar-menu">
-      {/* 1. BIBLIOTECA */}
+      {!loggedIn && (
+        <SidebarItem
+          icon={faUser}
+          label={t('button.login', 'Login')}
+          url="/login"
+          dataTour="sidebar-login"
+        />
+      )}
       <SidebarItem
         isActiveFallback={location.pathname.includes('gamepage')}
         url="/"
@@ -111,7 +127,6 @@ export default function SidebarLinks() {
         dataTour="sidebar-library"
       />
 
-      {/* 2. PERSONALIZAÇÃO */}
       <SidebarItem
         url="/personalization"
         icon={faPaintBrush}
@@ -119,7 +134,48 @@ export default function SidebarLinks() {
         dataTour="sidebar-personalization"
       />
 
-      {/* 3. CONFIGURAÇÕES */}
+      <div className="SidebarItemWithSubmenu">
+        <SidebarItem
+          isActiveFallback={location.pathname.includes('store')}
+          url={`/store/${defaultStore}`}
+          icon={faStore}
+          label={t('stores', 'Stores')}
+          dataTour="sidebar-stores"
+        />
+        {inWebviewScreen && (
+          <div className="SidebarSubmenu">
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/epic"
+              label={t('store', 'Epic Store')}
+            />
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/gog"
+              label={t('gog-store', 'GOG Store')}
+            />
+            <SidebarItem
+              className="SidebarLinks__subItem"
+              url="/store/amazon"
+              label={t('amazon-luna', 'Amazon Luna')}
+            />
+            {zoom.enabled && (
+              <SidebarItem
+                className="SidebarLinks__subItem"
+                url="/store/zoom"
+                label={t('zoom-store', 'Zoom Store')}
+              />
+            )}
+          </div>
+        )}
+      </div>
+      <SidebarItem
+        url="/discounts"
+        icon={faTags}
+        label={t('discounts.sidebar', 'Deals')}
+        dataTour="sidebar-discounts"
+      />
+      <div className="divider" />
       <div className="SidebarItemWithSubmenu">
         <SidebarItem
           isActiveFallback={location.pathname.includes('settings')}
@@ -175,65 +231,13 @@ export default function SidebarLinks() {
           </div>
         )}
       </div>
+      <SidebarItem
+        url="/console"
+        icon={faTv}
+        label={t('sidebar.console', 'Console Mode')}
+        dataTour="sidebar-console"
+      />
 
-      <div className="divider" />
-
-      {/* 4. LOJAS */}
-      <div className="SidebarItemWithSubmenu">
-        <SidebarItem
-          isActiveFallback={location.pathname.includes('store')}
-          url={`/store/${defaultStore}`}
-          icon={faStore}
-          label={t('stores', 'Stores')}
-          dataTour="sidebar-stores"
-        />
-        {inWebviewScreen && (
-          <div className="SidebarSubmenu">
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/epic"
-              label={t('store', 'Epic Store')}
-            />
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/gog"
-              label={t('gog-store', 'GOG Store')}
-            />
-            <SidebarItem
-              className="SidebarLinks__subItem"
-              url="/store/amazon"
-              label={t('amazon-luna', 'Amazon Luna')}
-            />
-            {zoom.enabled && (
-              <SidebarItem
-                className="SidebarLinks__subItem"
-                url="/store/zoom"
-                label={t('zoom-store', 'Zoom Store')}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* 5. CONECTE-SE / GERENCIAR CONTAS */}
-      {!loggedIn && (
-        <SidebarItem
-          icon={faUser}
-          label={t('button.login', 'Login')}
-          url="/login"
-          dataTour="sidebar-login"
-        />
-      )}
-      {loggedIn && (
-        <SidebarItem
-          url="/login"
-          icon={faUserAlt}
-          label={t('userselector.manageaccounts', 'Manage Accounts')}
-          dataTour="sidebar-manage-accounts"
-        />
-      )}
-
-      {/* 6. DOWNLOADS */}
       <SidebarItem
         url="/download-manager"
         icon={faBarsProgress}
@@ -241,7 +245,6 @@ export default function SidebarLinks() {
         dataTour="sidebar-downloads"
       />
 
-      {/* 7. WINE MANAGER (Só aparece se não for Windows) */}
       {!isWin && (
         <SidebarItem
           url="/wine-manager"
@@ -251,7 +254,15 @@ export default function SidebarLinks() {
         />
       )}
 
-      {/* 8. ACESSIBILIDADE */}
+      {loggedIn && (
+        <SidebarItem
+          url="/login"
+          icon={faUserAlt}
+          label={t('userselector.manageaccounts', 'Manage Accounts')}
+          dataTour="sidebar-manage-accounts"
+        />
+      )}
+
       <SidebarItem
         url="/accessibility"
         icon={faUniversalAccess}
@@ -260,6 +271,43 @@ export default function SidebarLinks() {
       />
 
       <div className="divider" />
+
+      <SidebarItem
+        url="/wiki"
+        icon={faBookOpen}
+        label={t('docs', 'Documentation')}
+        dataTour="sidebar-docs"
+      />
+
+      <div data-tour="sidebar-community">
+        <SidebarItem
+          elementType="button"
+          onClick={() => handleExternalLink(openDiscordLink)}
+          icon={faDiscord}
+          label={t('userselector.discord', 'Discord')}
+        />
+
+        <SidebarItem
+          elementType="button"
+          onClick={() => handleExternalLink(window.api.openPatreonPage)}
+          icon={faPatreon}
+          label="Patreon"
+        />
+
+        <SidebarItem
+          elementType="button"
+          onClick={() => handleExternalLink(window.api.openKofiPage)}
+          icon={faCoffee}
+          label="Ko-fi"
+        />
+
+        <SidebarItem
+          elementType="button"
+          onClick={() => handleExternalLink(window.api.openGithubSponsorsPage)}
+          icon={faGithub}
+          label="GitHub Sponsors"
+        />
+      </div>
 
       <QuitButton dataTour="sidebar-quit" />
     </div>

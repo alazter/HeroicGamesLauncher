@@ -41,6 +41,7 @@ import {
   DeleteForever,
   Description,
   Download,
+  Edit,
   Favorite,
   FavoriteBorder,
   List,
@@ -52,6 +53,8 @@ import {
   Visibility,
   VisibilityOff
 } from '@mui/icons-material'
+import EditGameDialog from 'frontend/components/UI/EditGameDialog'
+import { openInstallGameModal } from 'frontend/state/InstallGameModal'
 
 interface Card {
   buttonClick: () => void
@@ -176,15 +179,17 @@ const GameCard = ({
   const { layout } = useContext(LibraryContext)
 
   const {
-    title,
-    art_cover,
-    art_square: cover,
     art_logo: logo = undefined,
     app_name: appName,
     runner,
     is_installed: isInstalled,
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
+  const title = gameInfoFromProps.overrides?.title || gameInfoFromProps.title
+  const art_cover =
+    gameInfoFromProps.overrides?.art_cover || gameInfoFromProps.art_cover
+  const cover =
+    gameInfoFromProps.overrides?.art_square || gameInfoFromProps.art_square
 
   const isInstallable =
     gameInfo.installable === undefined || gameInfo.installable
@@ -412,6 +417,26 @@ const GameCard = ({
     setShowUninstallModal(true)
   }
 
+  const isSideloaded = runner === 'sideload'
+
+  const handleEdit = () => {
+    if (isSideloaded) {
+      openInstallGameModal({ appName, runner, gameInfo })
+      return
+    }
+
+    showDialogModal({
+      showDialog: true,
+      title: t('edit-game.title', 'Edit Game'),
+      message: (
+        <EditGameDialog
+          gameInfo={gameInfo}
+          backdropClick={() => showDialogModal({ showDialog: false })}
+        />
+      )
+    })
+  }
+
   const items: Item[] = [
     {
       label: t('button.queue.remove'),
@@ -467,6 +492,14 @@ const GameCard = ({
       onclick: () => openGameLogsModal(gameInfo),
       show: isInstalled && !isUninstalling && !isBrowserGame,
       icon: <Description />
+    },
+    {
+      label: isSideloaded
+        ? t('button.sideload.edit', 'Edit App/Game')
+        : t('edit-game.title', 'Edit Game'),
+      onclick: handleEdit,
+      show: true,
+      icon: <Edit />
     },
     {
       label: t('button.hide_game', 'Hide Game'),

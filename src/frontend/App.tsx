@@ -4,7 +4,8 @@ import {
   createHashRouter,
   Navigate,
   Outlet,
-  RouterProvider
+  RouterProvider,
+  useLocation
 } from 'react-router-dom'
 import Sidebar from './components/UI/Sidebar'
 import ContextProvider from './state/ContextProvider'
@@ -106,6 +107,7 @@ function Root() {
         .library-header > div {
           background-color: transparent !important;
           background: transparent !important;
+          background: transparent !important;
           box-shadow: none !important;
         }
 
@@ -156,6 +158,8 @@ function Root() {
     }
   }, [globalBg])
 
+  const isConsoleMode = useLocation().pathname.startsWith('/console')
+
   const theme = createTheme({
     direction: isRTL ? 'rtl' : 'ltr',
     typography: { fontFamily: 'var(--primary-font-family)' },
@@ -181,29 +185,39 @@ function Root() {
         isRTL,
         frameless: isFrameless,
         fullscreen: isFullscreen,
-        disableAnimations
+        disableAnimations,
+        consoleMode: isConsoleMode
       })}
     >
       <ThemeProvider theme={theme}>
-        <TourProvider>
-          <OfflineMessage />
-          <Sidebar />
-          <main className="content">
-            <DialogHandler />
-            <InstallGameWrapper />
-            <SettingsModalWrapper />
-            <ExternalLinkDialog />
-            <LogFileUploadDialog />
-            <UploadedLogFilesList />
+        {isConsoleMode ? (
+          <main className="content consoleContent">
             <Outlet />
-            <AnalyticsDialog />
           </main>
-          <div className="controller">
-            <ControllerHints />
-          </div>
-          {showOverlayControls && <WindowControls />}
-          {experimentalFeatures?.enableHelp && <Help items={helpItems} />}
-        </TourProvider>
+        ) : (
+          <TourProvider>
+            <OfflineMessage />
+            <Sidebar />
+            <main className="content">
+              <DialogHandler />
+              <InstallGameWrapper />
+              <SettingsModalWrapper />
+              <ExternalLinkDialog />
+              <LogFileUploadDialog />
+              <UploadedLogFilesList />
+              <Outlet />
+              <AnalyticsDialog />
+            </main>
+            <div className="controller">
+              <ControllerHints />
+              <dialog className="simple-keyboard-wrapper">
+                <div className="simple-keyboard"></div>
+              </dialog>
+            </div>
+            {showOverlayControls && <WindowControls />}
+            {experimentalFeatures?.enableHelp && <Help items={helpItems} />}
+          </TourProvider>
+        )}
       </ThemeProvider>
     </div>
   )
@@ -235,6 +249,10 @@ const router = createHashRouter([
       },
       { path: 'store-page', lazy: makeLazyFunc(import('./screens/WebView')) },
       {
+        path: 'discounts',
+        lazy: makeLazyFunc(import('./screens/Discounts'))
+      },
+      {
         path: 'loginweb/:runner',
         lazy: makeLazyFunc(import('./screens/WebView'))
       },
@@ -255,10 +273,18 @@ const router = createHashRouter([
         lazy: makeLazyFunc(import('./screens/Accessibility'))
       },
       {
+      {
         path: 'personalization',
         lazy: makeLazyFunc(import('./screens/Personalization'))
       },
-      { path: '*', element: <Navigate replace to="/" /> }
+      {
+        path: 'console',
+        lazy: makeLazyFunc(import('./screens/ConsoleMode'))
+      },
+      {
+        path: '*',
+        element: <Navigate replace to="/" />
+      }
     ]
   }
 ])
