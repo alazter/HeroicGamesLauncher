@@ -429,7 +429,16 @@ export default function SideloadDialog({
                   maxLength={40}
                 />
                 <details className="advancedFields">
-                  <summary>{t('sideload.images.summary', 'Images')}</summary>
+                  <summary
+                    onClick={(e) => {
+                      if (hasSgdbKey) {
+                        e.preventDefault()
+                        setSgdbTarget('square')
+                      }
+                    }}
+                  >
+                    {t('sideload.images.summary', 'Images')}
+                  </summary>
                   <TextInputWithIconField
                     label={t(
                       'sideload.info.image-hint',
