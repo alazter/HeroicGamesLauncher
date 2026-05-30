@@ -1,5 +1,4 @@
 import {
-  faBookOpen,
   faGamepad,
   faSlidersH,
   faStore,
@@ -264,7 +263,7 @@ export default function SidebarLinks() {
 
       <SidebarItem
         url="/wiki"
-        icon={faBookOpen}
+        icon={faGithub}
         label={t('docs', 'Documentation')}
         dataTour="sidebar-docs"
       />
