@@ -597,8 +597,12 @@
       opacity: 1;
       pointer-events: all;
       transition: all 0.2s;
-      background-color: var(--navbar-background);
-      border-radius: 5px;
+      background-color: rgba(16, 22, 34, 0.72) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
       z-index: 2;
       padding: 0;
       max-height: 0px;
@@ -632,9 +636,9 @@
     &:hover .gameTools {
       opacity: 1;
       pointer-events: all;
-      padding: var(--space-md);
+      padding: var(--space-md) !important;
       max-height: 100vh;
-      box-shadow: 4px 5px 5px -2px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
     }
   }
 
