@@ -88,10 +88,10 @@ export default memo(function LibraryHeader({ list }: Props) {
           flexGrow: 1,
           paddingTop: '0px',
           paddingBottom: '0px',
-          paddingLeft: alignment === 'left' ? '0px' : '10px',
+          paddingLeft: alignment === 'left' ? '6px' : '10px',
           paddingRight: '10px',
           '--alphabet-alignment': alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : alignment === 'fill' ? 'space-between' : 'center',
-          '--alphabet-padding-left': alignment === 'left' ? '0px' : '12px'
+          '--alphabet-padding-left': alignment === 'left' ? '8px' : '12px'
         } as React.CSSProperties}
       >
         {showAlphabetFilter && <AlphabetFilter />}
