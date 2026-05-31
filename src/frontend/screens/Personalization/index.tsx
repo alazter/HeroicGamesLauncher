@@ -421,10 +421,31 @@ export default function PersonalizationScreen() {
     localStorage.setItem('heroic_alphabet_color', hex)
     window.dispatchEvent(new Event('heroicSettingsChanged'))
   }
+
+  const handleGrayscaleSliderChange = (val: number) => {
+    const v = 255 - val
+    const hex = rgbToHex(v, v, v)
+    setAlphabetColor(hex)
+    localStorage.setItem('heroic_alphabet_color', hex)
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleLightnessSliderChange = (lVal: number) => {
+    const rgbValues = hexToRgb(alphabetColor)
+    const hslValues = rgbToHsl(rgbValues.r, rgbValues.g, rgbValues.b)
+    const newRgb = hslToRgb(hslValues.h, hslValues.s, lVal)
+    const hex = rgbToHex(newRgb.r, newRgb.g, newRgb.b)
+    setAlphabetColor(hex)
+    localStorage.setItem('heroic_alphabet_color', hex)
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
   // ==============================================================
 
   const rgbValues = hexToRgb(alphabetColor)
   const hslValues = rgbToHsl(rgbValues.r, rgbValues.g, rgbValues.b)
+  const pureRgb = hslToRgb(hslValues.h, hslValues.s < 10 ? 100 : hslValues.s, 50)
+  const currentGrayscaleValue = 255 - Math.round((rgbValues.r + rgbValues.g + rgbValues.b) / 3)
+  const pureColorHex = rgbToHex(pureRgb.r, pureRgb.g, pureRgb.b)
   
   const { r, g, b } = rgbValues
   const luminance = 0.299 * r + 0.587 * g + 0.114 * b
@@ -433,7 +454,6 @@ export default function PersonalizationScreen() {
 
   const btnTextColor = useDarkText ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)'
   const btnDisabledTextColor = useDarkText ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)'
-  const btnHoverTextColor = useDarkText ? '#000000' : '#ffffff'
   
   const activeBtnBg = alphabetBgOpacity > 0.4
     ? (isLightColor ? 'rgba(0, 150, 150, 0.85)' : `rgba(${r}, ${g}, ${b}, 0.85)`)
@@ -828,6 +848,100 @@ export default function PersonalizationScreen() {
           transform: scale(1.1) !important;
         }
 
+        /* LIGHTNESS SLIDER TRACK */
+        input[type='range'].lightness-picker-range::-webkit-slider-runnable-track {
+          width: 100% !important;
+          height: 20px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          background: var(--lightness-track-bg) !important;
+        }
+        input[type='range'].lightness-picker-range::-moz-range-track {
+          width: 100% !important;
+          height: 20px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          background: var(--lightness-track-bg) !important;
+        }
+
+        /* LIGHTNESS THUMB */
+        input[type='range'].lightness-picker-range::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          height: 28px !important;
+          width: 12px !important;
+          border-radius: 6px !important;
+          background: var(--thumb-color, #ffffff) !important;
+          border: 2.5px solid var(--thumb-border-color, #ffffff) !important;
+          cursor: pointer !important;
+          margin-top: -4px !important;
+          box-shadow: 0 0 10px var(--thumb-border-color, rgba(255, 255, 255, 0.5)) !important;
+          transition: transform 0.1s !important;
+        }
+        input[type='range'].lightness-picker-range::-webkit-slider-thumb:hover {
+          transform: scale(1.1) !important;
+        }
+        input[type='range'].lightness-picker-range::-moz-range-thumb {
+          height: 26px !important;
+          width: 10px !important;
+          border-radius: 6px !important;
+          background: var(--thumb-color, #ffffff) !important;
+          border: 2.5px solid var(--thumb-border-color, #ffffff) !important;
+          cursor: pointer !important;
+          box-shadow: 0 0 10px var(--thumb-border-color, rgba(255, 255, 255, 0.5)) !important;
+          transition: transform 0.1s !important;
+        }
+        input[type='range'].lightness-picker-range::-moz-range-thumb:hover {
+          transform: scale(1.1) !important;
+        }
+
+        /* GRAYSCALE SLIDER TRACK (White -> Grey -> Black) */
+        input[type='range'].grayscale-picker-range::-webkit-slider-runnable-track {
+          width: 100% !important;
+          height: 20px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          background: linear-gradient(to right, #ffffff, #808080, #000000) !important;
+        }
+        input[type='range'].grayscale-picker-range::-moz-range-track {
+          width: 100% !important;
+          height: 20px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          background: linear-gradient(to right, #ffffff, #808080, #000000) !important;
+        }
+
+        /* GRAYSCALE THUMB */
+        input[type='range'].grayscale-picker-range::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          height: 28px !important;
+          width: 12px !important;
+          border-radius: 6px !important;
+          background: var(--thumb-color, #ffffff) !important;
+          border: 2.5px solid var(--thumb-border-color, #ffffff) !important;
+          cursor: pointer !important;
+          margin-top: -4px !important;
+          box-shadow: 0 0 10px var(--thumb-border-color, rgba(255, 255, 255, 0.5)) !important;
+          transition: transform 0.1s !important;
+        }
+        input[type='range'].grayscale-picker-range::-webkit-slider-thumb:hover {
+          transform: scale(1.1) !important;
+        }
+        input[type='range'].grayscale-picker-range::-moz-range-thumb {
+          height: 26px !important;
+          width: 10px !important;
+          border-radius: 6px !important;
+          background: var(--thumb-color, #ffffff) !important;
+          border: 2.5px solid var(--thumb-border-color, #ffffff) !important;
+          cursor: pointer !important;
+          box-shadow: 0 0 10px var(--thumb-border-color, rgba(255, 255, 255, 0.5)) !important;
+          transition: transform 0.1s !important;
+        }
+        input[type='range'].grayscale-picker-range::-moz-range-thumb:hover {
+          transform: scale(1.1) !important;
+        }
+
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none; 
@@ -1039,7 +1153,7 @@ export default function PersonalizationScreen() {
 
         .preview-alphabet-btn {
           background-color: rgba(var(--base-r), var(--base-g), var(--base-b), var(--btn-op));
-          border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), calc(var(--btn-op) * 3));
+          border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), var(--btn-op));
           color: var(--txt-color);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 10px;
@@ -2006,6 +2120,45 @@ export default function PersonalizationScreen() {
                     value={hslValues.h}
                     onChange={(e) => handleHueSliderChange(Number(e.target.value))}
                     className="color-picker-range hue-picker-range"
+                    style={{
+                      '--thumb-color': alphabetColor,
+                      '--thumb-border-color': alphabetColor
+                    } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+
+              {/* Lightness Slider */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', color: '#8a9bb0' }}>Luminosidade (Escuro a Claro)</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={hslValues.l}
+                    onChange={(e) => handleLightnessSliderChange(Number(e.target.value))}
+                    className="color-picker-range lightness-picker-range"
+                    style={{
+                      '--lightness-track-bg': `linear-gradient(to right, #000000, ${pureColorHex}, #ffffff)`,
+                      '--thumb-color': alphabetColor,
+                      '--thumb-border-color': alphabetColor
+                    } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+
+              {/* Grayscale Slider (White -> Grey -> Black) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', color: '#8a9bb0' }}>Tons Neutros (Branco a Preto)</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="255"
+                    value={currentGrayscaleValue}
+                    onChange={(e) => handleGrayscaleSliderChange(Number(e.target.value))}
+                    className="color-picker-range grayscale-picker-range"
                     style={{
                       '--thumb-color': alphabetColor,
                       '--thumb-border-color': alphabetColor

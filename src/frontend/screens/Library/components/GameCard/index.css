@@ -88,10 +88,11 @@
   overflow: hidden;
 }
 
-.gameCard .gameImg {
+.gameCard:not(.justPlayed) .gameImg {
   width: 100%;
+  height: 100%;
   object-fit: cover;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: auto;
   display: block;
 }
 
@@ -136,8 +137,16 @@
   display: none !important; /* Esconde para ficar igual ao mockup */
 }
 
-.gameCard > .icons {
+.gameCard:not(.justPlayed) > .icons {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, rgba(16, 22, 34, 0.9) 0%, rgba(16, 22, 34, 0) 100%);
+  padding: var(--space-xs-fixed) var(--space-md-fixed);
+  box-sizing: border-box;
   display: flex;
+  z-index: 4;
 }
 
 .gameCard.justPlayed > .icons {

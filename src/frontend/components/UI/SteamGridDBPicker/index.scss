@@ -113,4 +113,30 @@
     padding: 1rem;
     color: var(--text-muted);
   }
+
+  &__back-btn {
+    background-color: var(--accent, #3cf2e6);
+    color: #12161a;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 12px;
+    font-size: 13px;
+    transition: transform 0.2s, background-color 0.2s;
+
+    &:hover {
+      transform: scale(1.08);
+      background-color: var(--accent-hover, #2ad1c5);
+    }
+
+    svg {
+      display: block;
+      color: #12161a !important;
+    }
+  }
 }

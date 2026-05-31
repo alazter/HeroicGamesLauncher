@@ -129,10 +129,14 @@ export default function SteamGridDBPicker({
             </button>
           )}
           <h3>{t('steamgriddb.picker.title', 'SteamGridDB Covers')}</h3>
+          <button
+            className="SteamGridDBPicker__back-btn"
+            onClick={onClose}
+            title={t('button.back', 'Go Back')}
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
         </div>
-        <button className="button is-ghost" onClick={onClose}>
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
       </div>
 
       {!selectedGameId && (

@@ -28,8 +28,6 @@ export default function Header() {
   }, [])
 
   const hasUnclassifiedGames = useMemo(() => {
-    if (!isMassEditMode) return false
-
     const allGames = [
       ...(epic?.library || []),
       ...(gog?.library || []),
@@ -49,7 +47,6 @@ export default function Header() {
       return !hasCategory && !hasAssignment && !game.install?.is_dlc
     })
   }, [
-    isMassEditMode,
     epic,
     gog,
     amazon,
@@ -114,7 +111,7 @@ export default function Header() {
       <div className="Header" style={{ display: 'block' }}>
         <LibrarySearchBar>
           <span className="Header__filters">
-            {isMassEditMode && hasUnclassifiedGames && (
+            {hasUnclassifiedGames && (
               <button
                 onClick={toggleUnclassifiedFilter}
                 style={{
