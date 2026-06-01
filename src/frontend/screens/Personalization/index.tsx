@@ -980,16 +980,16 @@ export default function PersonalizationScreen() {
           position: relative;
           display: flex;
           flex-direction: column;
-          width: 240px;
+          width: 290px;
         }
 
         .preview-search-bar {
           display: flex;
           align-items: center;
-          height: 42px;
+          height: 48px;
           background: var(--search-bar-background, var(--input-background));
           border-radius: var(--space-md);
-          padding: 0 var(--space-xs);
+          padding: 0 var(--space-sm);
           box-sizing: border-box;
           width: 100%;
           border: none;
@@ -998,8 +998,8 @@ export default function PersonalizationScreen() {
 
         .preview-search-icon-svg {
           color: var(--text-secondary);
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           flex-shrink: 0;
           padding: var(--space-2xs) var(--space-sm);
           box-sizing: content-box;
@@ -1011,7 +1011,7 @@ export default function PersonalizationScreen() {
           outline: none !important;
           color: var(--text-secondary);
           font: var(--font-secondary-bold);
-          font-size: 13px;
+          font-size: 15px;
           padding: 0 var(--space-2xs);
           width: 100%;
           box-sizing: border-box;
@@ -1024,7 +1024,7 @@ export default function PersonalizationScreen() {
 
         .preview-suggestions-dropdown {
           position: absolute;
-          top: 34px;
+          top: 40px;
           left: 0;
           right: 0;
           background: var(--input-background);
@@ -1039,9 +1039,9 @@ export default function PersonalizationScreen() {
         }
 
         .preview-suggestion-item {
-          font-size: 11px;
+          font-size: 13px;
           color: #a0aec0;
-          padding: 4px 8px;
+          padding: 6px 10px;
           border-radius: 4px;
           cursor: pointer;
           text-align: left;
@@ -1055,23 +1055,23 @@ export default function PersonalizationScreen() {
           display: flex;
           flex-wrap: wrap;
           justify-content: flex-start;
-          gap: 12px;
+          gap: 16px;
           width: 100%;
           box-sizing: border-box;
-          padding-top: 4px;
+          padding-top: 6px;
         }
 
         .preview-platform-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          padding: 4px 8px;
-          border-radius: 8px;
+          gap: 8px;
+          padding: 6px 12px;
+          border-radius: 12px;
           background: transparent;
           border: none;
           color: #fff;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 400;
           cursor: default;
           white-space: nowrap;
@@ -1088,20 +1088,20 @@ export default function PersonalizationScreen() {
         }
 
         .preview-platform-icon-img {
-          width: 22px;
-          height: 22px;
+          width: 26px;
+          height: 26px;
           object-fit: contain;
         }
 
         .preview-platform-icon-placeholder {
-          width: 22px;
-          height: 22px;
+          width: 26px;
+          height: 26px;
           border-radius: 50%;
           background: #4CAF50;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 10px;
+          font-size: 12px;
           color: #fff;
           font-weight: bold;
         }
@@ -1117,31 +1117,31 @@ export default function PersonalizationScreen() {
         }
 
         .preview-title {
-          font-size: 14px;
+          font-size: 18px;
           font-weight: bold;
           color: #fff;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           margin: 0;
         }
 
         .preview-title-count {
-          font-size: 11px;
+          font-size: 13px;
           color: #8a9bb0;
           background: rgba(255, 255, 255, 0.08);
-          padding: 2px 6px;
-          border-radius: 10px;
+          padding: 3px 8px;
+          border-radius: 12px;
         }
 
         /* SIMULATED ALFABETO */
         .preview-alphabet-container {
           display: flex;
           flex-wrap: nowrap;
-          gap: 3px;
-          padding: 4px 8px;
+          gap: 6px;
+          padding: 6px 12px;
           background-color: rgba(var(--base-r), var(--base-g), var(--base-b), var(--bg-op));
-          border-radius: 14px;
+          border-radius: 20px;
           border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), calc(var(--bg-op) * 0.8));
           max-width: 100%;
           overflow-x: auto;
@@ -1156,10 +1156,10 @@ export default function PersonalizationScreen() {
           border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), var(--btn-op));
           color: var(--txt-color);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          font-size: 10px;
+          font-size: 14px;
           font-weight: 600;
-          width: 18px;
-          height: 18px;
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1174,7 +1174,7 @@ export default function PersonalizationScreen() {
           background-color: var(--active-bg) !important;
           color: #ffffff !important;
           font-weight: 700;
-          border: 1.5px solid #00ffff !important;
+          border: 2px solid #00ffff !important;
           box-shadow: 0 0 6px rgba(0, 255, 255, 0.4) !important;
           transform: scale(1.1);
         }
@@ -1392,7 +1392,7 @@ export default function PersonalizationScreen() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '15px' }}>
                   {/* Lado Esquerdo: Navegação, Busca, Botão Adicionar e Ícones */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ display: 'flex', gap: '8px', color: 'rgba(255,255,255,0.4)', fontSize: '14px', cursor: 'default', fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', gap: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'default', fontWeight: 'bold' }}>
                       <span>⟨</span>
                       <span>⟩</span>
                     </div>
@@ -1410,8 +1410,8 @@ export default function PersonalizationScreen() {
                       </div>
                       {/* Simulated Search Suggestions Dropdown */}
                       {!hideSearchSuggestions && (
-                        <div className="preview-suggestions-dropdown" style={{ top: '46px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#8a9bb0', padding: '2px 8px', textAlign: 'left' }}>SUGESTÕES DE BUSCA</span>
+                        <div className="preview-suggestions-dropdown" style={{ top: '52px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#8a9bb0', padding: '4px 10px', textAlign: 'left' }}>SUGESTÕES DE BUSCA</span>
                           <div className="preview-suggestion-item">🎮 Cyberpunk 2077</div>
                           <div className="preview-suggestion-item">🎮 The Witcher 3: Wild Hunt</div>
                           <div className="preview-suggestion-item">🎮 Hades</div>
@@ -1422,18 +1422,18 @@ export default function PersonalizationScreen() {
                     {/* Botão + ADICIONAR JOGO */}
                     <button style={{
                       fontFamily: 'var(--secondary-font-family)',
-                      borderRadius: '21px',
+                      borderRadius: '24px',
                       color: 'var(--text-tertiary, #151921)',
                       background: 'var(--primary-button, var(--accent, #3cf2e6))',
-                      height: '42px',
-                      padding: '0 16px',
+                      height: '48px',
+                      padding: '0 20px',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       border: 'none',
                       cursor: 'default',
                       textTransform: 'uppercase',
-                      fontSize: '11px',
+                      fontSize: '13px',
                       fontWeight: 'bold',
                       whiteSpace: 'nowrap'
                     }}>
@@ -1441,7 +1441,7 @@ export default function PersonalizationScreen() {
                     </button>
 
                     {/* Ícones de Ação mockados */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginLeft: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.6)', fontSize: '18px', marginLeft: '8px' }}>
                       <span title="Exibição em Lista" style={{ cursor: 'default' }}>☰</span>
                       <span title="Ordenar" style={{ cursor: 'default' }}>⇅</span>
                       <span title="Exibição em Grade" style={{ cursor: 'default', color: '#fff' }}>☷</span>
@@ -1451,13 +1451,13 @@ export default function PersonalizationScreen() {
                   </div>
 
                   {/* Lado Direito: Filtros mockados */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button style={{
                       background: 'transparent',
                       border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '16px',
-                      padding: '6px 12px',
-                      fontSize: '11px',
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
                       color: 'rgba(255,255,255,0.8)',
                       cursor: 'default',
                       whiteSpace: 'nowrap'
@@ -1467,32 +1467,32 @@ export default function PersonalizationScreen() {
                     <div style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '16px',
-                      padding: '6px 12px',
-                      fontSize: '11px',
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
                       color: 'rgba(255,255,255,0.8)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '8px',
                       cursor: 'default'
                     }}>
                       <span>Categorias</span>
-                      <span style={{ fontSize: '7px' }}>▼</span>
+                      <span style={{ fontSize: '8px' }}>▼</span>
                     </div>
                     <div style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '16px',
-                      padding: '6px 12px',
-                      fontSize: '11px',
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
                       color: 'rgba(255,255,255,0.8)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '8px',
                       cursor: 'default'
                     }}>
                       <span>Filtros</span>
-                      <span style={{ fontSize: '7px' }}>▼</span>
+                      <span style={{ fontSize: '8px' }}>▼</span>
                     </div>
                   </div>
                 </div>
