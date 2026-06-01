@@ -41,6 +41,26 @@ export default React.memo(function ActionIcons({
     onToggleAlphabetFilter
   } = useContext(LibraryContext)
 
+  const [useInlinePanel, setUseInlinePanel] = React.useState<boolean>(() => {
+    return localStorage.getItem('heroic_use_inline_panel') !== 'false'
+  })
+
+  const handleToggle = () => {
+    const newVal = !useInlinePanel
+    setUseInlinePanel(newVal)
+    localStorage.setItem('heroic_use_inline_panel', newVal ? 'true' : 'false')
+    window.dispatchEvent(new Event('heroicUseInlinePanelChanged'))
+  }
+
+  React.useEffect(() => {
+    const handleModeChange = () => {
+      const active = localStorage.getItem('heroic_use_inline_panel') !== 'false'
+      setUseInlinePanel(active)
+    }
+    window.addEventListener('heroicUseInlinePanelChanged', handleModeChange)
+    return () => window.removeEventListener('heroicUseInlinePanelChanged', handleModeChange)
+  }, [])
+
   return (
     <div className="ActionIcons" data-tour={dataTour}>
       <FormControl segmented small>
@@ -129,6 +149,20 @@ export default React.memo(function ActionIcons({
           />
         </button>
       </FormControl>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '4px' }}>
+        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontWeight: '600', minWidth: '70px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+          {useInlinePanel ? 'Novo Modo' : 'Modo Antigo'}
+        </span>
+        <label className="premium-switch">
+          <input
+            type="checkbox"
+            checked={useInlinePanel}
+            onChange={handleToggle}
+          />
+          <span className="premium-slider"></span>
+        </label>
+      </div>
     </div>
   )
 })

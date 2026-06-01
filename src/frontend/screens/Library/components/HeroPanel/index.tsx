@@ -6,9 +6,10 @@ import { GameInfo } from 'common/types'
 interface Props {
   game: GameInfo
   onClose: () => void
+  onSettingsClick?: () => void
 }
 
-export default function HeroPanel({ game, onClose }: Props) {
+export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
   const navigate = useNavigate()
 
   // O mock mostra playtime em horas, vou usar game.playtime ou valor fictício para teste
@@ -19,7 +20,11 @@ export default function HeroPanel({ game, onClose }: Props) {
   }
 
   const handleSettings = () => {
-    navigate(`/gamepage/${game.runner}/${game.app_name}`, { state: { gameInfo: game } })
+    if (onSettingsClick) {
+      onSettingsClick()
+    } else {
+      navigate(`/gamepage/${game.runner}/${game.app_name}`, { state: { gameInfo: game } })
+    }
   }
 
   const handleStore = () => {
@@ -39,16 +44,21 @@ export default function HeroPanel({ game, onClose }: Props) {
 
   return (
     <div style={{
-      width: '280px',
+      width: '380px',
+      height: 'fit-content',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box',
       flexShrink: 0,
       background: 'rgba(30, 34, 40, 0.4)',
       backdropFilter: 'blur(10px)',
       borderRadius: '16px',
-      padding: '20px',
-      marginRight: '20px',
+      padding: '15px 15px 8px 15px',
+      marginLeft: '15px',
+      marginRight: '15px',
+      marginTop: '-9px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '15px',
+      gap: '6px',
       border: '1px solid rgba(255, 255, 255, 0.1)',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)'
     }}>
@@ -57,10 +67,16 @@ export default function HeroPanel({ game, onClose }: Props) {
         src={game.art_cover || ''}
         alt={game.title}
         style={{
-          width: '100%',
-          aspectRatio: '3/4',
+          width: 'calc(100% + 30px)',
+          height: '460px',
+          marginTop: '-15px',
+          marginLeft: '-15px',
+          marginRight: '-15px',
           objectFit: 'cover',
-          borderRadius: '12px',
+          borderTopLeftRadius: '16px',
+          borderTopRightRadius: '16px',
+          borderBottomLeftRadius: '0px',
+          borderBottomRightRadius: '0px',
           boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
           cursor: 'pointer'
         }}
@@ -72,14 +88,14 @@ export default function HeroPanel({ game, onClose }: Props) {
         fontSize: '18px',
         fontWeight: '700',
         color: '#fff',
-        margin: '0',
+        margin: '6px 0',
         textAlign: 'center'
       }}>
         {game.title}
       </h2>
 
       {/* Ações primárias (Botoes Redondos do Mockup) */}
-      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', margin: '5px 0' }}>
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', margin: '2px 0' }}>
         {/* 1. Botão da Loja */}
         <button
           onClick={handleStore}
@@ -178,29 +194,42 @@ export default function HeroPanel({ game, onClose }: Props) {
         color: 'rgba(255, 255, 255, 0.6)',
         fontSize: '13px',
         textAlign: 'center',
-        margin: '5px 0',
-        lineHeight: '1.6'
+        margin: '6px 0',
+        lineHeight: '1.4'
       }}>
         <div>Tempo de jogo: {playTimeStr}</div>
         <div>Última jogada: Ontem</div>
       </div>
 
-      <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '5px 0' }} />
+      <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '2px 0' }} />
 
-      {/* Links de Sistema com Emojis (do Mockup) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <HeroLink emoji="🛒" label="Loja" onClick={handleStore} />
-        <HeroLink emoji="👥" label="Comunidade" onClick={() => window.api.openExternalUrl('https://discord.gg/heroicgameslauncher')} />
-        <HeroLink emoji="📥" label="Downloads" onClick={() => navigate('/download-manager')} />
-        <HeroLink emoji="📰" label="Notícias" onClick={() => {}} />
-        <HeroLink emoji="👤" label="Perfil do Usuário" onClick={() => navigate('/login')} />
-        <HeroLink emoji="⚙️" label="Configurações do Launcher" onClick={() => navigate('/settings/general')} />
+      {/* Links de Sistema (Novo Layout de 2 Colunas com Separador) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px' }}>
+          {/* Coluna 1 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderRight: '1px solid rgba(255, 255, 255, 0.1)', paddingRight: '4px' }}>
+            <HeroLink emoji="🛒" label="Loja" onClick={handleStore} />
+            <HeroLink emoji="📥" label="Downloads" onClick={() => navigate('/download-manager')} />
+            <HeroLink emoji="📰" label="Notícias" onClick={() => {}} />
+          </div>
+          {/* Coluna 2 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '4px' }}>
+            <HeroLink emoji="👥" label="Comunidade" onClick={() => window.api.openExternalUrl('https://discord.gg/heroicgameslauncher')} />
+            <HeroLink emoji="👤" label="Perfil do Usuário" onClick={() => navigate('/login')} />
+            <HeroLink emoji="📰" label="Notícias" onClick={() => {}} />
+          </div>
+        </div>
+
+        {/* Item Centralizado na Base */}
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '0px' }}>
+          <HeroLink emoji="⚙️" label="Configurações do Launcher" onClick={() => navigate('/settings/general')} center />
+        </div>
       </div>
     </div>
   )
 }
 
-function HeroLink({ emoji, label, onClick }: { emoji: string, label: string, onClick: () => void }) {
+function HeroLink({ emoji, label, onClick, center }: { emoji: string, label: string, onClick: () => void, center?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -210,15 +239,16 @@ function HeroLink({ emoji, label, onClick }: { emoji: string, label: string, onC
         color: 'rgba(255, 255, 255, 0.7)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '8px 12px',
+        justifyContent: center ? 'center' : 'flex-start',
+        gap: '8px',
+        padding: '4px 8px',
         cursor: 'pointer',
         fontSize: '14px',
         fontWeight: '500',
-        textAlign: 'left',
         borderRadius: '8px',
         transition: 'all 0.2s ease',
-        width: '100%'
+        width: '100%',
+        whiteSpace: 'nowrap'
       }}
       onMouseOver={(e) => {
         e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
@@ -229,7 +259,17 @@ function HeroLink({ emoji, label, onClick }: { emoji: string, label: string, onC
         e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
       }}
     >
-      <span style={{ fontSize: '16px', display: 'inline-flex', alignItems: 'center', width: '20px', justifyContent: 'center' }}>{emoji}</span>
+      <div style={{
+        fontSize: '18px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '24px',
+        height: '24px',
+        flexShrink: 0
+      }}>
+        {emoji}
+      </div>
       <span>{label}</span>
     </button>
   )

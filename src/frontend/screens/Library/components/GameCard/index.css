@@ -475,3 +475,17 @@
     opacity: 1;
   }
 }
+
+.gameCard.selectedInline {
+  outline: 3px solid #00ffff !important;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6) !important;
+  transform: scale(1.03) !important;
+  z-index: 5 !important;
+}
+
+.gameListItem.selectedInline {
+  border-left: 5px solid #00ffff !important;
+  padding-left: 10px !important;
+  background-color: rgba(0, 255, 255, 0.05) !important;
+}
+

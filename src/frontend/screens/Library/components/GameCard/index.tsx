@@ -123,9 +123,24 @@ const GameCard = ({
   gameInfo: gameInfoFromProps,
   dataTour
 }: Card) => {
+  const { app_name: appName, runner } = gameInfoFromProps
   const [gameInfo, setGameInfo] = useState<GameInfo>(gameInfoFromProps)
   const [showUninstallModal, setShowUninstallModal] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
+
+  const [isSelectedInline, setIsSelectedInline] = useState<boolean>(false)
+
+  // Listen to active selected game changes reactively
+  useEffect(() => {
+    const handleSelectedChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ appName: string | null; runner: Runner | null }>
+      const { appName: selAppName, runner: selRunner } = customEvent.detail
+      setIsSelectedInline(selAppName === appName && selRunner === runner)
+    }
+    window.addEventListener('heroicSelectedGameChanged', handleSelectedChange)
+    return () =>
+      window.removeEventListener('heroicSelectedGameChanged', handleSelectedChange)
+  }, [appName, runner])
 
   // ESTADOS DAS CONFIGURAÇÕES DE PERSONALIZAÇÃO
   const [hideIconsGamepad, setHideIconsGamepad] = useState<boolean>(() => {
@@ -180,8 +195,6 @@ const GameCard = ({
 
   const {
     art_logo: logo = undefined,
-    app_name: appName,
-    runner,
     is_installed: isInstalled,
     install: gameInstallInfo
   } = { ...gameInfoFromProps }
@@ -550,7 +563,8 @@ const GameCard = ({
     hidden: isHiddenGame,
     notAvailable: notAvailable,
     gamepad: !shouldShowIcons,
-    justPlayed: justPlayed
+    justPlayed: justPlayed,
+    selectedInline: isSelectedInline
   })
 
   const imgClasses = classNames('gameImg', { installed: isInstalled })
@@ -589,11 +603,19 @@ const GameCard = ({
             }
           }}
           onKeyDown={(e) => {
-            if (activeController && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault()
-              navigate(`/gamepage/${runner}/${appName}`, {
-                state: { gameInfo }
-              })
+            if (e.key === 'Enter' || e.key === ' ') {
+              const active = localStorage.getItem('heroic_use_inline_panel') !== 'false'
+              if (active) {
+                e.preventDefault()
+                window.dispatchEvent(new CustomEvent('heroicSelectGameInline', {
+                  detail: { gameInfo }
+                }))
+              } else if (activeController) {
+                e.preventDefault()
+                navigate(`/gamepage/${runner}/${appName}`, {
+                  state: { gameInfo }
+                })
+              }
             }
           }}
         >
@@ -612,6 +634,15 @@ const GameCard = ({
             style={
               { '--installing-effect': installingGrayscale } as CSSProperties
             }
+            onClick={(e) => {
+              const active = localStorage.getItem('heroic_use_inline_panel') !== 'false'
+              if (active) {
+                e.preventDefault()
+                window.dispatchEvent(new CustomEvent('heroicSelectGameInline', {
+                  detail: { gameInfo }
+                }))
+              }
+            }}
           >
             {justPlayed ? (
               <CachedImage

@@ -42,8 +42,10 @@ export default memo(function LibraryHeader({ list }: Props) {
         justifyContent: 'flex-start',
         width: '100%',
         paddingBottom: '10px',
-        paddingLeft: '35px' /* <--- ADICIONEI ESTE RECUO AQUI */,
-        gap: '20px'
+        paddingLeft: '35px',
+        gap: '20px',
+        position: 'relative',
+        top: '0px'
       }}
     >
       {/* 1. TÍTULO (Esquerda) */}
@@ -56,7 +58,9 @@ export default memo(function LibraryHeader({ list }: Props) {
             padding: 0,
             border: 'none',
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            position: 'relative',
+            top: '0px'
           }}
         >
           <span

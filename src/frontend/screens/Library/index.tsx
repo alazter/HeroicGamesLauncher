@@ -38,6 +38,7 @@ import EmptyLibraryMessage from './components/EmptyLibrary'
 import CategoriesManager from './components/CategoriesManager'
 import LibraryTour from './components/LibraryTour'
 import HeroPanel from './components/HeroPanel'
+import InlineGameSettings from './components/InlineGameSettings'
 import { openInstallGameModal } from 'frontend/state/InstallGameModal'
 const storage = window.localStorage
 
@@ -933,6 +934,46 @@ export default memo(function Library(): JSX.Element {
   }
 
   const [selectedInlineGame, setSelectedInlineGame] = useState<GameInfo | null>(null)
+  const [showInlineSettings, setShowInlineSettings] = useState(false)
+
+  // Listen to selection mode changes reactively
+  useEffect(() => {
+    const handleModeChange = () => {
+      const active = localStorage.getItem('heroic_use_inline_panel') !== 'false'
+      if (!active) {
+        setSelectedInlineGame(null)
+      }
+    }
+    window.addEventListener('heroicUseInlinePanelChanged', handleModeChange)
+    return () => window.removeEventListener('heroicUseInlinePanelChanged', handleModeChange)
+  }, [])
+
+  // Listen to select game inline events
+  useEffect(() => {
+    const handleSelectGame = (e: Event) => {
+      const customEvent = e as CustomEvent<{ gameInfo: GameInfo }>
+      const game = customEvent.detail.gameInfo
+      setSelectedInlineGame((current) => {
+        if (current?.app_name === game.app_name && current?.runner === game.runner) {
+          return null
+        }
+        return game
+      })
+    }
+    window.addEventListener('heroicSelectGameInline', handleSelectGame)
+    return () => window.removeEventListener('heroicSelectGameInline', handleSelectGame)
+  }, [])
+
+  // Notify cards when active selection changes
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('heroicSelectedGameChanged', {
+      detail: {
+        appName: selectedInlineGame?.app_name || null,
+        runner: selectedInlineGame?.runner || null
+      }
+    }))
+    setShowInlineSettings(false)
+  }, [selectedInlineGame])
 
   function handleModal(
     appName: string,
@@ -940,7 +981,7 @@ export default memo(function Library(): JSX.Element {
     gameInfo?: GameInfo
   ) {
     if (gameInfo) {
-      if (selectedInlineGame?.app_name === appName) {
+      if (selectedInlineGame?.app_name === appName && selectedInlineGame?.runner === runner) {
         setSelectedInlineGame(null)
       } else {
         setSelectedInlineGame(gameInfo)
@@ -1405,6 +1446,7 @@ export default memo(function Library(): JSX.Element {
       >
         <Header />
         <LibraryTour />
+        <LibraryHeader list={libraryToShow} />
 
         <div
           className="listing"
@@ -1413,72 +1455,83 @@ export default memo(function Library(): JSX.Element {
             display: 'flex',
             flexDirection: 'row',
             flex: 1,
-            minHeight: 0
+            minHeight: 0,
+            paddingTop: '15px'
           }}
         >
           {selectedInlineGame && (
             <HeroPanel 
               game={selectedInlineGame} 
               onClose={() => setSelectedInlineGame(null)} 
+              onSettingsClick={() => setShowInlineSettings(true)}
             />
           )}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
-            <div style={{ flexShrink: 0 }}>
-              {showRecentGames && (
-                <RecentlyPlayed
-                  handleModal={handleModal}
-                  onlyInstalled={libraryTopSection.endsWith('installed')}
-                  showHidden={showHidden}
-                />
-              )}
+            {showInlineSettings && selectedInlineGame ? (
+              <InlineGameSettings 
+                game={selectedInlineGame} 
+                onClose={() => setShowInlineSettings(false)} 
+              />
+            ) : (
+              <>
+                <div style={{ flexShrink: 0 }}>
+                  {showRecentGames && (
+                    <RecentlyPlayed
+                      handleModal={handleModal}
+                      onlyInstalled={libraryTopSection.endsWith('installed')}
+                      showHidden={showHidden}
+                    />
+                  )}
 
-              {showFavourites && !showFavouritesLibrary && (
-                <>
-                  <div
-                    className="library-section-header"
-                    data-tour="library-header"
-                  >
-                    <h3 className="libraryHeader">
-                      {t('favourites', 'Favourites')}
-                    </h3>
-                  </div>
-                  <GamesList
-                    library={favourites}
-                    handleGameCardClick={handleModal}
-                    isFavourite
-                    isFirstLane
-                  />
-                </>
-              )}
+                  {showFavourites && !showFavouritesLibrary && (
+                    <>
+                      <div
+                        className="library-section-header"
+                        data-tour="library-header"
+                      >
+                        <h3 className="libraryHeader">
+                          {t('favourites', 'Favourites')}
+                        </h3>
+                      </div>
+                      <GamesList
+                        library={favourites}
+                        handleGameCardClick={handleModal}
+                        isFavourite
+                        isFirstLane
+                      />
+                    </>
+                  )}
+                </div>
 
-              <LibraryHeader list={libraryToShow} />
-            </div>
-
-            <div
-              id="games-scroll-area"
-              data-sn-section="main-games-grid"
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                minHeight: 0,
-                paddingBottom: '30px',
-                paddingRight: '8px'
-              }}
-            >
-              <span id="top" />
-            {refreshing && !refreshingInTheBackground && <UpdateComponent />}
-            {libraryToShow.length === 0 && <EmptyLibraryMessage />}
-              {libraryToShow.length > 0 &&
-                (!refreshing || refreshingInTheBackground) && (
-                  <GamesList
-                    library={libraryToShow}
-                    layout={layout}
-                    handleGameCardClick={handleModal}
-                  />
-                )}
-            </div>
+                <div
+                  id="games-scroll-area"
+                  data-sn-section="main-games-grid"
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    minHeight: 0,
+                    paddingBottom: '30px',
+                    paddingRight: '8px',
+                    marginTop: '-20px',
+                    paddingTop: '20px'
+                  }}
+                >
+                  <span id="top" />
+                {refreshing && !refreshingInTheBackground && <UpdateComponent />}
+                {libraryToShow.length === 0 && <EmptyLibraryMessage />}
+                  {libraryToShow.length > 0 &&
+                    (!refreshing || refreshingInTheBackground) && (
+                      <GamesList
+                        library={libraryToShow}
+                        layout={layout}
+                        handleGameCardClick={handleModal}
+                      />
+                    )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1620,7 +1673,7 @@ export default memo(function Library(): JSX.Element {
             .gameList {
               grid-template-columns: repeat(auto-fill, minmax(${cardZoom}px, 1fr)) !important;
               gap: 30px !important; 
-              padding: 5px 20px 20px 20px !important;
+              padding: 0px 20px 20px 20px !important;
             }
             .gameCard {
               scroll-margin-top: 150px !important;
