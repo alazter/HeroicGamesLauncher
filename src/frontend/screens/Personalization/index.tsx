@@ -16,6 +16,9 @@ export default function PersonalizationScreen() {
   })
 
   const [isDraggingBg, setIsDraggingBg] = useState<boolean>(false)
+  const [focusedStoreId, setFocusedStoreId] = useState<string | null>(null)
+  const [activePreviewStoreId, setActivePreviewStoreId] = useState<string>('')
+  const [activePreviewLetter, setActivePreviewLetter] = useState<string>('C')
 
   // Lógica funcional de Lojas
   const [stores, setStores] = useState<CustomStore[]>(() => {
@@ -178,7 +181,12 @@ export default function PersonalizationScreen() {
   useEffect(() => {
     localStorage.setItem('heroic_custom_stores', JSON.stringify(stores))
     window.dispatchEvent(new Event('customStoresChanged'))
-  }, [stores])
+    
+    const firstVisible = stores.find((s) => s.isVisible ?? true)
+    if (firstVisible && !activePreviewStoreId) {
+      setActivePreviewStoreId(firstVisible.id)
+    }
+  }, [stores, activePreviewStoreId])
 
   const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -307,7 +315,7 @@ export default function PersonalizationScreen() {
 
   const hexToRgb = (hex: string) => {
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
-    const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b)
+    const fullHex = hex.replace(shorthandRegex, (_, r: string, g: string, b: string) => r + r + g + g + b + b)
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex)
     return result
       ? {
@@ -511,7 +519,7 @@ export default function PersonalizationScreen() {
     // 1. COLUNA ESQUERDA (LOJAS)
     // =========================================
     sidebarLeft: {
-      width: '420px',
+      width: '380px',
       height: '100%',
       padding: '30px 0 30px 70px',
       background: 'rgba(30, 34, 40, 0.6)',
@@ -530,7 +538,7 @@ export default function PersonalizationScreen() {
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
-      paddingRight: '20px'
+      paddingRight: '15px'
     } as React.CSSProperties,
 
     storeBlockCompact: {
@@ -1066,25 +1074,37 @@ export default function PersonalizationScreen() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 6px 12px;
+          padding: 5px 11px;
           border-radius: 12px;
-          background: transparent;
-          border: none;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           color: #fff;
           font-size: 14px;
           font-weight: 400;
           cursor: default;
           white-space: nowrap;
-          transition: all 0.2s ease;
+          transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
           flex-shrink: 0;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .preview-platform-btn:hover {
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.15);
         }
 
         .preview-platform-btn--active {
-          background: rgba(255, 255, 255, 0.1) !important;
-          font-weight: 500;
+          background: linear-gradient(135deg, rgba(20, 24, 30, 0.6) 0%, rgba(230, 126, 34, 0.06) 100%) padding-box, linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(230, 126, 34, 0.95) 100%) border-box !important;
+          border: 1px solid transparent !important;
+          background-clip: padding-box, border-box !important;
+          background-origin: padding-box, border-box !important;
+          font-weight: 600 !important;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          box-shadow: 0 3px 12px 0 rgba(230, 126, 34, 0.14), inset 0 0 8px rgba(255, 255, 255, 0.05) !important;
+          position: relative;
+          z-index: 2;
         }
 
         .preview-platform-icon-img {
@@ -1146,6 +1166,8 @@ export default function PersonalizationScreen() {
           max-width: 100%;
           overflow-x: auto;
           scrollbar-width: none;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
         }
         .preview-alphabet-container::-webkit-scrollbar {
           display: none;
@@ -1171,11 +1193,13 @@ export default function PersonalizationScreen() {
         }
 
         .preview-alphabet-btn--active {
-          background-color: var(--active-bg) !important;
+          background: linear-gradient(135deg, rgba(20, 24, 30, 0.6) 0%, rgba(230, 126, 34, 0.06) 100%) padding-box, linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(230, 126, 34, 0.95) 100%) border-box !important;
+          border: 2px solid transparent !important;
+          background-clip: padding-box, border-box !important;
+          background-origin: padding-box, border-box !important;
           color: #ffffff !important;
           font-weight: 700;
-          border: 2px solid #00ffff !important;
-          box-shadow: 0 0 6px rgba(0, 255, 255, 0.4) !important;
+          box-shadow: 0 3px 10px 0 rgba(230, 126, 34, 0.25), inset 0 0 4px rgba(255, 255, 255, 0.1) !important;
           transform: scale(1.1);
         }
 
@@ -1275,6 +1299,21 @@ export default function PersonalizationScreen() {
           align-items: center;
           justify-content: center;
         }
+
+        /* Custom thin scrollbar for store list */
+        .store-list-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .store-list-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .store-list-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
+        }
+        .store-list-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.25);
+        }
       `}</style>
       <div style={styles.backgroundBlur} />
 
@@ -1283,14 +1322,20 @@ export default function PersonalizationScreen() {
         {/* 1. SIDEBAR ESQUERDA (LOJAS)               */}
         {/* ========================================= */}
         <div style={styles.sidebarLeft}>
-          <div style={{ paddingRight: '30px' }}>
-            <span style={styles.sectionTitle}>GERENCIAMENTO DE LOJAS</span>
+          <div style={{ paddingRight: '15px', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '26px', fontWeight: 300, color: '#fff', margin: '0 0 12px 0', fontFamily: 'sans-serif' }}>Lojas</h2>
+            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)' }} />
           </div>
 
-          <div style={styles.storeListContext}>
+          <div style={styles.storeListContext} className="store-list-scrollbar">
             {stores.map((store, index) => {
               const isStoreVisible = store.isVisible ?? true
               const isDragged = draggedIndex === index
+              const imageSource = store.icon
+                ? store.icon
+                : ['epic', 'gog', 'amazon', 'zoom', 'sideloaded', 'steam'].includes(store.id)
+                  ? `/images/${store.id}.png`
+                  : null;
 
               return (
                 <div
@@ -1300,82 +1345,222 @@ export default function PersonalizationScreen() {
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragEnd={handleDragEnd}
                   style={{
-                    ...styles.storeBlockCompact,
-                    opacity: isDragged ? 0.35 : (isStoreVisible ? 1 : 0.5),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    background: isDragged 
+                      ? 'rgba(255, 255, 255, 0.01)' 
+                      : focusedStoreId === store.id 
+                        ? 'linear-gradient(135deg, rgba(20, 24, 30, 0.6) 0%, rgba(230, 126, 34, 0.06) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(230, 126, 34, 0.95) 100%)' 
+                        : 'rgba(255, 255, 255, 0.03)',
+                    backgroundClip: focusedStoreId === store.id ? 'padding-box, border-box' : 'border-box',
+                    backgroundOrigin: focusedStoreId === store.id ? 'padding-box, border-box' : 'border-box',
+                    border: isDragged
+                      ? '1px dashed rgba(230, 126, 34, 0.6)'
+                      : focusedStoreId === store.id
+                        ? '1px solid transparent'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: isDragged
+                      ? 'none'
+                      : focusedStoreId === store.id
+                        ? '0 3px 12px 0 rgba(230, 126, 34, 0.14), inset 0 0 8px rgba(255, 255, 255, 0.05)'
+                        : '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    opacity: isDragged ? 0.35 : (focusedStoreId === store.id || isStoreVisible ? 1 : 0.65),
                     transform: isDragged ? 'scale(0.98)' : 'none',
-                    border: isDragged ? '1px dashed #00ffff' : '1px solid rgba(255,255,255,0.05)',
                     cursor: 'grab',
-                    transition: 'transform 0.1s ease, border 0.1s ease'
+                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    zIndex: focusedStoreId === store.id ? 2 : 1
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isStoreVisible}
-                    onChange={() => handleToggleVisibility(store.id)}
-                    title="Mostrar/Esconder Loja"
-                    style={{
-                      cursor: 'pointer',
-                      width: '16px',
-                      height: '16px',
-                      margin: 0,
-                      accentColor: '#4CAF50',
-                      flexShrink: 0
-                    }}
-                  />
-
-                  <div style={styles.dragHandle}>≡</div>
-
-                  <div style={styles.squareIcon}>
-                    {store.icon ? (
-                      <img
-                        src={store.icon}
-                        alt=""
-                        style={{
-                          width: '20px',
-                          height: '20px',
-                          objectFit: 'contain'
-                        }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                    {/* Clickable Icon Label */}
+                    <label 
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s ease',
+                        background: 'transparent'
+                      }}
+                      title="Clique para alterar o ícone"
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept=".png"
+                        onChange={(e) => handleIconUpload(store.id, e)}
+                        style={{ display: 'none' }}
                       />
-                    ) : (
-                      <span style={{ fontSize: '12px', color: '#5c6b7f' }}>
-                        ?
-                      </span>
-                    )}
+                      {imageSource ? (
+                        <img
+                          src={imageSource}
+                          alt=""
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.4)' }}>
+                          📷
+                        </span>
+                      )}
+                    </label>
+
+                    {/* Name Input */}
+                    <input
+                      type="text"
+                      value={store.name}
+                      placeholder="Nome da Loja"
+                      onChange={(e) => handleNameChange(store.id, e.target.value)}
+                      onFocus={() => setFocusedStoreId(store.id)}
+                      onBlur={() => setFocusedStoreId(null)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        color: '#fff',
+                        fontSize: '15px',
+                        fontWeight: 400,
+                        width: '100%',
+                        padding: '4px 0',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                      }}
+                    />
                   </div>
 
-                  <input
-                    type="text"
-                    value={store.name}
-                    placeholder="Nome da Loja"
-                    onChange={(e) => handleNameChange(store.id, e.target.value)}
-                    style={styles.textInputCompact}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    {/* Toggle Visibility Button */}
+                    <button
+                      onClick={() => handleToggleVisibility(store.id)}
+                      title={isStoreVisible ? "Ocultar Loja" : "Mostrar Loja"}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        color: isStoreVisible ? '#fff' : 'rgba(255, 255, 255, 0.3)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                      }}
+                    >
+                      {isStoreVisible ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      )}
+                    </button>
 
-                  <label style={styles.actionBtn} title="Adicionar Ícone">
-                    <input
-                      type="file"
-                      accept=".png"
-                      onChange={(e) => handleIconUpload(store.id, e)}
-                      style={{ display: 'none' }}
-                    />
-                    📷
-                  </label>
-
-                  <button
-                    style={styles.deleteBtnCompact}
-                    onClick={() => handleRemoveStore(store.id)}
-                    title="Deletar Loja"
-                  >
-                    X
-                  </button>
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleRemoveStore(store.id)}
+                      title="Remover Loja"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(231, 76, 60, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+                        e.currentTarget.style.color = '#e74c3c';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               )
             })}
           </div>
 
-          <div style={{ paddingRight: '30px' }}>
-            <button style={styles.addStoreBtn} onClick={handleAddStore}>
-              + Adicionar Loja
+          <div style={{ paddingRight: '15px', marginTop: '16px' }}>
+            <button
+              onClick={handleAddStore}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '12px',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '14px',
+                fontWeight: 400,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                outline: 'none'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+              }}
+            >
+              <span style={{ fontSize: '18px', fontWeight: 300, lineHeight: 1 }}>+</span>
+              Nova Loja
             </button>
           </div>
         </div>
@@ -1502,13 +1687,16 @@ export default function PersonalizationScreen() {
                       const imageSource = store.icon
                         ? store.icon
                         : `/images/${store.id}.png`
-                      // Faz com que o primeiro item da lista fique selecionado por padrão, igual à Steam na imagem
-                      const isActive = index === 0
+                      const isActive = activePreviewStoreId === store.id || (!activePreviewStoreId && index === 0)
                       return (
-                        <div key={store.id} className={`preview-platform-btn ${isActive ? 'preview-platform-btn--active' : ''}`}>
+                        <div 
+                          key={store.id} 
+                          className={`preview-platform-btn ${isActive ? 'preview-platform-btn--active' : ''}`}
+                          onClick={() => setActivePreviewStoreId(store.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
                           {store.icon || ['epic', 'gog', 'amazon', 'zoom', 'sideloaded', 'steam'].includes(store.id) ? (
                             <img src={imageSource} className="preview-platform-icon-img" alt="" onError={(e) => {
-                              // Se der erro ao carregar imagem, esconde e deixa apenas o texto ou um placeholder sutil
                               e.currentTarget.style.display = 'none'
                             }} />
                           ) : (
@@ -1548,11 +1736,12 @@ export default function PersonalizationScreen() {
                 {/* 2. ALFABETO (Esticado no resto do espaço) */}
                 <div
                   style={{
-                    flexGrow: 1,
+                    flex: 1,
                     display: 'flex',
-                    justifyContent: alphabetAlignment === 'left' ? 'flex-start' : alphabetAlignment === 'right' ? 'flex-end' : alphabetAlignment === 'fill' ? 'space-between' : 'center',
-                    paddingLeft: alphabetAlignment === 'left' ? '6px' : '10px',
-                    paddingRight: '10px',
+                    justifyContent: alphabetAlignment === 'left' ? 'flex-start' : alphabetAlignment === 'right' ? 'flex-end' : alphabetAlignment === 'fill' ? 'stretch' : 'center',
+                    paddingLeft: alphabetAlignment === 'left' ? '0px' : '10px',
+                    paddingRight: '0px',
+                    marginLeft: alphabetAlignment === 'left' ? '-10px' : '0px',
                     overflow: 'hidden'
                   }}
                 >
@@ -1566,17 +1755,22 @@ export default function PersonalizationScreen() {
                       '--btn-op': alphabetBtnOpacity,
                       '--txt-color': btnTextColor,
                       '--disabled-txt-color': btnDisabledTextColor,
-                      '--active-bg': activeBtnBg
+                      '--active-bg': activeBtnBg,
+                      width: alphabetAlignment === 'fill' ? '100%' : 'auto',
+                      justifyContent: alphabetAlignment === 'fill' ? 'space-between' : 'center'
                     } as React.CSSProperties}
                   >
                     {'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map((char) => {
-                      const isActive = char === 'C'
-                      const isDisabled = 'BJKQXYZ#'.includes(char)
+                      const isActive = char === activePreviewLetter
                       let btnClass = 'preview-alphabet-btn'
                       if (isActive) btnClass += ' preview-alphabet-btn--active'
-                      if (isDisabled) btnClass += ' preview-alphabet-btn--disabled'
                       return (
-                        <div key={char} className={btnClass}>
+                        <div 
+                          key={char} 
+                          className={btnClass}
+                          onClick={() => setActivePreviewLetter(char)}
+                          style={{ cursor: 'pointer' }}
+                        >
                           {char}
                         </div>
                       )

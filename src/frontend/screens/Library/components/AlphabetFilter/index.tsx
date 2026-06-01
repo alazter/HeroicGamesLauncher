@@ -1,4 +1,4 @@
-import React, { useMemo, useContext, useState, useEffect } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import './index.css'
 import LibraryContext from '../../LibraryContext'
 
@@ -7,8 +7,7 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('')
 const AlphabetFilter: React.FC = () => {
   const {
     alphabetFilterLetter: currentFilter,
-    setAlphabetFilterLetter: onFilterChange,
-    gamesForAlphabetFilter: allGames
+    setAlphabetFilterLetter: onFilterChange
   } = useContext(LibraryContext)
 
   const [bgOpacity, setBgOpacity] = useState<number>(() => {
@@ -41,32 +40,10 @@ const AlphabetFilter: React.FC = () => {
     return () => window.removeEventListener('heroicSettingsChanged', handleSettingsChange)
   }, [])
 
-  const availableChars = useMemo(() => {
-    const chars = new Set<string>()
-    allGames.forEach((game) => {
-      const title = game.overrides?.title || game.title
-      if (title) {
-        const processedTitle = title.replace(/^the\s/i, '')
-        const firstCharMatch = processedTitle.match(/[a-zA-Z0-9]/)
-        if (firstCharMatch) {
-          const char = firstCharMatch[0]
-          if (/[0-9]/.test(char)) {
-            chars.add('#')
-          } else {
-            chars.add(char.toUpperCase())
-          }
-        }
-      }
-    })
-    return chars
-  }, [allGames])
-
   const getButtonClassName = (value: string) => {
     let className = 'alphabet-filter-button'
     if (value === currentFilter) {
       className += ' alphabet-filter-button--active'
-    } else if (!availableChars.has(value)) {
-      className += ' alphabet-filter-button--disabled'
     }
     return className
   }
@@ -74,14 +51,14 @@ const AlphabetFilter: React.FC = () => {
   const handleClick = (value: string) => {
     if (value === currentFilter) {
       onFilterChange(null)
-    } else if (availableChars.has(value)) {
+    } else {
       onFilterChange(value)
     }
   }
 
   const hexToRgb = (hex: string) => {
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
-    const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b)
+    const fullHex = hex.replace(shorthandRegex, (_, r: string, g: string, b: string) => r + r + g + g + b + b)
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex)
     return result
       ? {
@@ -123,14 +100,11 @@ const AlphabetFilter: React.FC = () => {
       } as React.CSSProperties}
     >
       {CHARS.map((char) => {
-        const isInteractable =
-          availableChars.has(char) || char === currentFilter
         return (
           <button
             key={char}
             onClick={() => handleClick(char)}
             className={getButtonClassName(char)}
-            disabled={!isInteractable}
           >
             {char}
           </button>
