@@ -1228,9 +1228,7 @@ export default function PersonalizationScreen() {
           justify-content: flex-end;
           transition: transform 0.2s;
         }
-        .preview-game-card.gamepad {
-          aspect-ratio: 3/4;
-        }
+
         .preview-game-card:hover {
           transform: translateY(-2px);
           border-color: rgba(255, 255, 255, 0.15);
@@ -1784,7 +1782,7 @@ export default function PersonalizationScreen() {
               {/* 3. GAMES GRID */}
               <div className="preview-games-grid">
                 {previewGames.map((game) => (
-                  <div key={game.id} className={`preview-game-card ${hideIconsMouse ? 'gamepad' : ''}`}>
+                  <div key={game.id} className="preview-game-card">
                     {/* Game Cover Art Image or Gradient */}
                     <div
                       className="preview-game-banner"

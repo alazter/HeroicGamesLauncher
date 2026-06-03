@@ -594,7 +594,7 @@ const GameCard = ({
     installed: isInstalled,
     hidden: isHiddenGame,
     notAvailable: notAvailable,
-    gamepad: !shouldShowIcons,
+    gamepad: Boolean(activeController),
     justPlayed: justPlayed,
     selectedInline: isSelectedInline
   })
