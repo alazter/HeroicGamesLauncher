@@ -50,7 +50,8 @@
     "prettier": "prettier --check .",
     "prettier-fix": "prettier --write .",
     "download-helper-binaries": "esbuild --bundle --platform=node --target=node21 meta/downloadHelperBinaries.ts | node",
-    "lint-translations": "esbuild --bundle --platform=node --target=node21 meta/lintTranslations.ts | node"
+    "lint-translations": "esbuild --bundle --platform=node --target=node21 meta/lintTranslations.ts | node",
+    "backup": "Powershell.exe -File ./create_backup.ps1"
   },
   "dependencies": {
     "@fontsource/cabin": "^4.5.10",
