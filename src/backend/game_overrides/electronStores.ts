@@ -17,6 +17,7 @@ export const gameOverridesStore = new TypeCheckedStoreBackend(
   {
     cwd: join(userDataPath, 'store'),
     name: 'game-overrides',
-    clearInvalidConfig: true
+    clearInvalidConfig: true,
+    watch: true
   }
 )

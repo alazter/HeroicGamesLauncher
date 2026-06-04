@@ -86,8 +86,10 @@
         "remove_from_recent": "Remover dos recentes",
         "run-exe-first": "Executar instalador antes",
         "running-setup": "Executando Setup",
+        "edit-cover": "Editar capa do jogo",
         "sideload": {
-            "edit": "Editar App/Jogo"
+            "edit": "Editar capa do jogo",
+            "edit-cover": "Editar capa do jogo"
         },
         "unhide_game": "Reexibir jogo",
         "uninstall": "Desinstalar",

@@ -222,6 +222,13 @@ export interface GameInfo {
   }
 }
 
+export interface GameCandidate {
+  title: string
+  executable: string
+  art_cover: string
+  art_square: string
+}
+
 export interface GameSettings {
   autoInstallDxvk: boolean
   autoInstallVkd3d: boolean

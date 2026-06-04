@@ -305,6 +305,7 @@ export default React.memo(function GamePage(): JSX.Element | null {
     } = gameInfo
     const title = gameInfo.overrides?.title || gameInfo.title
     const art_cover = gameInfo.overrides?.art_cover || gameInfo.art_cover
+    const art_square = gameInfo.overrides?.art_square || gameInfo.art_square
 
     hasUpdate = is_installed && gameUpdates?.includes(appName)
 
@@ -435,7 +436,7 @@ export default React.memo(function GamePage(): JSX.Element | null {
                   <div className="mainInfoWrapper">
                     <div className="mainInfo">
                       <GamePicture
-                        art_square={art_cover}
+                        art_square={art_square || art_cover}
                         art_logo={art_logo}
                         store={runner}
                       />

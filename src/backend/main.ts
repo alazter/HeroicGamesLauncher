@@ -23,7 +23,7 @@ import 'backend/updater'
 import 'backend/discounts'
 import { autoUpdater } from 'electron-updater'
 import { cpus } from 'os'
-import { existsSync, watch, readdirSync, readFileSync } from 'graceful-fs'
+import { existsSync, watch, readdirSync, readFileSync, writeFileSync } from 'graceful-fs'
 import 'source-map-support/register'
 
 import Backend from 'i18next-fs-backend'
@@ -68,7 +68,7 @@ import {
 
 import { Path } from './schemas'
 
-import { uninstallGameCallback } from './utils/uninstaller'
+import { uninstallGameCallback, bulkUninstallCallback } from './utils/uninstaller'
 import { handleProtocol, shouldHideWindowForProtocolArgs } from './protocol'
 import {
   init as initLogger,
@@ -114,9 +114,19 @@ import {
   initStoreManagers,
   libraryManagerMap
 } from './storeManagers'
-import { addNewApp } from './storeManagers/sideload/library'
+import { addNewApp, updateSideloadedApps } from './storeManagers/sideload/library'
+import {
+  scanInstalledGames,
+  discoverInstalledGames,
+  importSelectedGames,
+  undoImport,
+  addGameToBlacklist,
+  clearBlacklist,
+  getBlacklist
+} from './storeManagers/sideload/scanner'
 import {
   setGameOverrides,
+  setAllGameOverrides,
   getGameOverrides,
   getAllGameOverrides,
   attachOverrides
@@ -942,6 +952,7 @@ addHandler('openDialog', async (e, args) => {
 addListener('showItemInFolder', async (e, item) => showItemInFolder(item))
 
 addHandler('uninstall', uninstallGameCallback)
+addHandler('bulkUninstall', bulkUninstallCallback)
 
 addHandler('repair', async (event, appName, runner) => {
   if (!isOnline()) {
@@ -1362,11 +1373,48 @@ addListener('setTitleBarOverlay', (e, args) => {
 })
 
 addListener('addNewApp', (e, args) => addNewApp(args))
+addHandler('scanInstalledGames', () => scanInstalledGames())
+addHandler('discoverInstalledGames', () => discoverInstalledGames())
+addHandler('importSelectedGames', (e, args) => importSelectedGames(args))
+addHandler('undoImport', (e, args) => undoImport(args))
+addHandler('addGameToBlacklist', (e, args) => addGameToBlacklist(args))
+addHandler('clearBlacklist', () => clearBlacklist())
+addHandler('getBlacklist', () => getBlacklist())
+addHandler('exportScanLog', async (e, text: string) => {
+  const mainWindow = getMainWindow()
+  if (!mainWindow) return false
+
+  const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Salvar Log do PC Game Scanner',
+    defaultPath: 'sideload_scan_log.txt',
+    filters: [{ name: 'Text Files', extensions: ['txt'] }]
+  })
+
+  if (!canceled && filePath) {
+    try {
+      writeFileSync(filePath, text, 'utf-8')
+      return true
+    } catch (err) {
+      logError(['Failed to write scan log file:', err])
+      return false
+    }
+  }
+  return false
+})
 
 addListener('setGameMetadataOverride', (e, args) => {
   const { appName, title, art_cover, art_square } = args
   setGameOverrides(appName, { title, art_cover, art_square })
   sendFrontendMessage('metadataChanged', getAllGameOverrides())
+})
+
+addListener('setAllGameOverrides', (e, overrides) => {
+  setAllGameOverrides(overrides)
+  sendFrontendMessage('metadataChanged', overrides)
+})
+
+addListener('updateSideloadedApps', (e, apps) => {
+  updateSideloadedApps(apps)
 })
 
 addHandler('getGameMetadataOverride', async (_e, appName) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react'
 import ContextProvider from 'frontend/state/ContextProvider'
+import './index.css'
 
 interface CustomStore {
   id: string
@@ -56,6 +57,10 @@ export default function PersonalizationScreen() {
   const [hideSearchSuggestions, setHideSearchSuggestions] = useState<boolean>(() => {
     const saved = localStorage.getItem('heroic_hide_search_suggestions')
     return saved !== null ? (JSON.parse(saved) as boolean) : false
+  })
+
+  const [useInlinePanel, setUseInlinePanel] = useState<boolean>(() => {
+    return localStorage.getItem('heroic_use_inline_panel') !== 'false'
   })
 
   const [alphabetAlignment, setAlphabetAlignment] = useState<string>(() => {
@@ -188,6 +193,15 @@ export default function PersonalizationScreen() {
     }
   }, [stores, activePreviewStoreId])
 
+  useEffect(() => {
+    const handleModeChange = () => {
+      const active = localStorage.getItem('heroic_use_inline_panel') !== 'false'
+      setUseInlinePanel(active)
+    }
+    window.addEventListener('heroicUseInlinePanelChanged', handleModeChange)
+    return () => window.removeEventListener('heroicUseInlinePanelChanged', handleModeChange)
+  }, [])
+
   const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -293,6 +307,13 @@ export default function PersonalizationScreen() {
     setHideSearchSuggestions(newVal)
     localStorage.setItem('heroic_hide_search_suggestions', JSON.stringify(newVal))
     window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleToggleInlinePanel = () => {
+    const newVal = !useInlinePanel
+    setUseInlinePanel(newVal)
+    localStorage.setItem('heroic_use_inline_panel', newVal ? 'true' : 'false')
+    window.dispatchEvent(new Event('heroicUseInlinePanelChanged'))
   }
 
   const handleToggleAlphabetAlignment = (val: string) => {
@@ -1629,6 +1650,21 @@ export default function PersonalizationScreen() {
                       <span title="Ocultar Instalados" style={{ cursor: 'default' }}>👁</span>
                       <span title="Recarregar" style={{ cursor: 'default' }}>↻</span>
                     </div>
+
+                    {/* Switch de Layout Novo Modo / Modo Antigo Real */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px', zIndex: 10 }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontWeight: '600', minWidth: '70px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {useInlinePanel ? 'Novo Modo' : 'Modo Antigo'}
+                      </span>
+                      <label className="premium-switch" style={{ cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={useInlinePanel}
+                          onChange={handleToggleInlinePanel}
+                        />
+                        <span className="premium-slider"></span>
+                      </label>
+                    </div>
                   </div>
 
                   {/* Lado Direito: Filtros mockados */}
@@ -1999,6 +2035,8 @@ export default function PersonalizationScreen() {
                   style={styles.checkbox}
                 />
               </label>
+
+
             </div>
           </div>
 

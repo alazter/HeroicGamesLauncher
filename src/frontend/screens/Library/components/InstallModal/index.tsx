@@ -164,8 +164,9 @@ function InstallModal({ appName, runner, gameInfo = null }: Props) {
     <div className="InstallModal">
       <Dialog
         onClose={closeModal}
-        showCloseButton
-        className="InstallModal__dialog"
+        showCloseButton={!isSideload}
+        className={`InstallModal__dialog ${isSideload ? 'InstallModal__dialog--sideload' : ''}`}
+        maxWidth={isSideload ? false : 'md'}
       >
         {isThirdPartyManagedApp ? (
           <ThirdPartyDialog

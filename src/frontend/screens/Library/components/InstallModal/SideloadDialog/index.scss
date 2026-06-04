@@ -1,40 +1,102 @@
 .sideloadGrid {
-  display: grid;
-  justify-content: space-around;
-  grid-template-columns: min-content 1fr;
-  width: 800px;
+  display: flex;
+  gap: 20px;
+  width: 1060px;
   max-width: 100%;
-  min-height: 70vh;
+  height: 80vh;
+  max-height: 720px;
+  min-height: 520px;
+  box-sizing: border-box;
 
-  /* When the form column scrolls, picker swaps in without bumping the dialog. */
+  .simulated-hero-panel {
+    width: 380px;
+    height: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    background: rgba(30, 34, 40, 0.45);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+
+  .simulated-settings-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(20, 24, 30, 0.45);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
   .sideloadForm {
-    min-width: 0;
+    flex: 1;
     overflow-y: auto;
-    max-height: 70vh;
+    padding-right: 8px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
 
-  .textInputFieldWrapper.Field .selectFieldWrapper.Field {
-    margin: 0 var(--space-xs);
-  }
+  .hero-mock-link {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    width: 100%;
+    white-space: nowrap;
+    text-align: left;
 
-  .imageIcons {
-    margin-block: var(--space-lg) 0;
-    margin-inline: 0 var(--space-lg);
-    width: auto;
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
   }
 
   .appImageContainer {
     position: relative;
     cursor: pointer;
-    margin-bottom: var(--space-md);
-    width: 210px;
     border-radius: 10px;
     overflow: hidden;
-    border: 3px solid var(--neutral-02);
+    border: 3px solid rgba(255, 255, 255, 0.08);
     transition: 200ms;
 
     &.hasSgdbKey:hover {
-      border-color: var(--primary);
+      border-color: #00ffff;
       transform: scale(1.02);
 
       .imageHoverOverlay {
@@ -57,20 +119,11 @@
   }
 
   .appImage {
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 2 / 3;
     object-fit: cover;
     display: block;
     width: 100%;
     transition: 200ms;
-
-    &.heroImage {
-      aspect-ratio: 1600 / 650;
-    }
-  }
-
-  .heroImageContainer {
-    width: 100%;
-    margin-bottom: var(--space-md);
   }
 
   .imageLoadingOverlay,
@@ -97,31 +150,15 @@
     opacity: 0;
   }
 
-  .titleIcon {
-    word-break: break-word;
-    display: flex;
-    justify-content: space-between;
+  .sgdbWarningLink {
+    text-decoration: underline;
+    color: #00ffff;
+    cursor: pointer;
   }
+}
 
-  .advancedFields {
-    summary {
-      cursor: pointer;
-      font-size: var(--font-size-sm);
-      color: var(--neutral-06);
-      font-weight: bold;
-      padding: var(--space-xs) 0;
-      user-select: none;
-    }
-
-    &[open] {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-md);
-    }
-  }
-
-  .helpLink {
-    height: auto;
-    margin-block-start: 0;
-  }
+.sideloadDialogContent {
+  padding: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
 }

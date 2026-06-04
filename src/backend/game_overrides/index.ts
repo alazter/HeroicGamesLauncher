@@ -100,3 +100,34 @@ export function attachOverrides(gameInfo: GameInfo): GameInfo {
   }
   return { ...gameInfo, overrides }
 }
+
+/**
+ * Save all game overrides at once (bulk update)
+ */
+export function setAllGameOverrides(overrides: Record<string, GameMetadataOverride>): boolean {
+  try {
+    const previousOverrides = gameOverridesStore.get('overrides', {}) as Record<
+      string,
+      GameMetadataOverride
+    >
+
+    // Find apps that had overrides but now either don't, or have empty cover fields
+    for (const appName of Object.keys(previousOverrides)) {
+      const prev = previousOverrides[appName]
+      const next = overrides[appName]
+      if (
+        (prev.art_cover || prev.art_square) &&
+        (!next || (!next.art_cover && !next.art_square))
+      ) {
+        removeImagesForApp(appName)
+      }
+    }
+
+    gameOverridesStore.set('overrides', overrides)
+    logInfo('Saved all overrides', logPrefix)
+    return true
+  } catch {
+    logError('Failed to save all overrides', logPrefix)
+    return false
+  }
+}

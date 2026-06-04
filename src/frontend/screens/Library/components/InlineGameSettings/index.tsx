@@ -21,6 +21,7 @@ import { sideloadLibrary, gameOverridesStore } from 'frontend/helpers/electronSt
 // Material Icons para as Ações do Jogo e Visibilidade
 import {
   Edit as EditIcon,
+  Image as ImageIcon,
   Shortcut as ShortcutIcon,
   Delete as DeleteIcon,
   FormatListBulleted as FormatListBulletedIcon,
@@ -52,7 +53,7 @@ interface ActionItem {
 
 const DEFAULT_ACTIONS: ActionItem[] = [
   { id: 'rename', name: 'Nome de jogo', iconKey: 'rename', isVisible: true },
-  { id: 'edit', name: 'Editar App/Jogo', iconKey: 'edit', isVisible: true },
+  { id: 'edit-cover', name: 'Editar capa do jogo', iconKey: 'edit', isVisible: true },
   { id: 'shortcut', name: 'Adicionar atalho', iconKey: 'shortcut', isVisible: true },
   { id: 'browse', name: 'Navegar pelos arquivos', iconKey: 'browse', isVisible: true },
   { id: 'categories', name: 'Categorias', iconKey: 'categories', isVisible: true },
@@ -113,6 +114,8 @@ const syncFrontendStoreForOverride = (
   }
 }
 
+const SHOW_HORIZONTAL_BANNER = false
+
 export default function InlineGameSettings({ game, onClose }: Props) {
   const { t, i18n } = useTranslation('gamepage')
   const { showDialogModal, refreshLibrary } = useContext(ContextProvider)
@@ -137,7 +140,34 @@ export default function InlineGameSettings({ game, onClose }: Props) {
       setEditCover(game.overrides?.art_cover || game.art_cover || '')
       setEditSquare(game.overrides?.art_square || game.art_square || '')
     }
-  }, [inlineSgdbTarget, game])
+  }, [inlineSgdbTarget, game.art_cover, game.overrides?.art_cover, game.art_square, game.overrides?.art_square])
+
+  useEffect(() => {
+    if (inlineSgdbTarget) {
+      window.api.logInfo(`Dispatching real-time cover preview event for ${game.app_name}`)
+      window.dispatchEvent(
+        new CustomEvent('heroicGameCoverChanged', {
+          detail: {
+            appName: game.app_name,
+            runner: game.runner,
+            art_cover: editCover,
+            art_square: editSquare
+          }
+        })
+      )
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('heroicGameCoverChanged', {
+          detail: {
+            appName: game.app_name,
+            runner: game.runner,
+            art_cover: game.overrides?.art_cover || game.art_cover || '',
+            art_square: game.overrides?.art_square || game.art_square || ''
+          }
+        })
+      )
+    }
+  }, [editCover, editSquare, game.app_name, game.runner, inlineSgdbTarget, game.art_cover, game.overrides?.art_cover, game.art_square, game.overrides?.art_square])
 
   const handleSideloadExeChange = async (newPath: string) => {
     setSideloadExe(newPath)
@@ -229,7 +259,13 @@ export default function InlineGameSettings({ game, onClose }: Props) {
     const saved = localStorage.getItem('heroic_inline_settings_actions')
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as ActionItem[]
+        let parsed = JSON.parse(saved) as ActionItem[]
+        parsed = parsed.map((act) => {
+          if (act.id === 'edit') {
+            return { ...act, id: 'edit-cover', name: 'Editar capa do jogo' }
+          }
+          return act
+        })
         const ids = new Set(parsed.map(a => a.id))
         const missing = DEFAULT_ACTIONS.filter(a => !ids.has(a.id))
         return [...parsed, ...missing]
@@ -442,12 +478,12 @@ export default function InlineGameSettings({ game, onClose }: Props) {
             onClick={() => setIsEditingTitle(true)}
           />
         )
-      case 'edit':
+      case 'edit-cover':
         return (
           <ActionButton
-            key="edit"
-            icon={<EditIcon />}
-            label={game.runner === 'sideload' ? t('button.sideload.edit', 'Editar App/Jogo') : t('button.edit-game', 'Editar Jogo')}
+            key="edit-cover"
+            icon={<ImageIcon />}
+            label={game.runner === 'sideload' ? t('button.sideload.edit-cover', 'Editar capa do jogo') : t('button.edit-cover', 'Editar capa do jogo')}
             onClick={handleEdit}
           />
         )
@@ -529,7 +565,7 @@ export default function InlineGameSettings({ game, onClose }: Props) {
     
     let iconNode = null
     if (act.id === 'rename') iconNode = <TitleIcon />
-    else if (act.id === 'edit') iconNode = <EditIcon />
+    else if (act.id === 'edit-cover') iconNode = <ImageIcon />
     else if (act.id === 'shortcut') iconNode = <ShortcutIcon />
     else if (act.id === 'browse') iconNode = <FolderIcon />
     else if (act.id === 'categories') iconNode = <FormatListBulletedIcon />
@@ -561,7 +597,7 @@ export default function InlineGameSettings({ game, onClose }: Props) {
       >
         <ActionButton
           icon={iconNode}
-          label={act.id === 'rename' ? 'Nome de jogo' : (act.id === 'edit' && game.runner === 'sideload' ? t('button.sideload.edit', 'Editar App/Jogo') : t(`button.${act.id}`, act.name))}
+          label={act.id === 'rename' ? 'Nome de jogo' : (act.id === 'edit-cover' && game.runner === 'sideload' ? t('button.sideload.edit-cover', 'Editar capa do jogo') : t(`button.${act.id}`, act.name))}
           onClick={() => {}} // Clique gerenciado pela div pai
           danger={isDanger}
           steamBrandColor={isSteamBrand}
@@ -659,7 +695,7 @@ export default function InlineGameSettings({ game, onClose }: Props) {
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            width: '180px',
+            width: '260px',
             flexShrink: 0,
             borderRight: '1px solid rgba(255, 255, 255, 0.08)',
             paddingRight: '12px',
@@ -677,44 +713,46 @@ export default function InlineGameSettings({ game, onClose }: Props) {
                   cursor: 'pointer',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  border: inlineSgdbTarget === 'square' ? '3px solid #3cf2e6' : '3px solid rgba(255, 255, 255, 0.08)',
+                  border: '3px solid rgba(255, 255, 255, 0.08)',
                   transition: 'all 0.2s ease',
-                  transform: inlineSgdbTarget === 'square' ? 'scale(1.02)' : 'none',
-                  boxShadow: inlineSgdbTarget === 'square' ? '0 0 15px rgba(60, 242, 230, 0.35)' : 'none'
+                  transform: 'none',
+                  boxShadow: 'none'
                 }}
                 onClick={() => setInlineSgdbTarget('square')}
               >
                 <CachedImage
-                  style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
                   src={editSquare || fallbackImage}
                 />
               </div>
             </div>
 
             {/* Banner Horizontal */}
-            <div style={{ marginBottom: '16px' }}>
-              <span style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
-                Banner Horizontal
-              </span>
-              <div
-                style={{
-                  position: 'relative',
-                  cursor: 'pointer',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  border: inlineSgdbTarget === 'cover' ? '3px solid #3cf2e6' : '3px solid rgba(255, 255, 255, 0.08)',
-                  transition: 'all 0.2s ease',
-                  transform: inlineSgdbTarget === 'cover' ? 'scale(1.02)' : 'none',
-                  boxShadow: inlineSgdbTarget === 'cover' ? '0 0 15px rgba(60, 242, 230, 0.35)' : 'none'
-                }}
-                onClick={() => setInlineSgdbTarget('cover')}
-              >
-                <CachedImage
-                  style={{ width: '100%', aspectRatio: '1600/650', objectFit: 'cover', display: 'block' }}
-                  src={editCover || editSquare || fallbackImage}
-                />
+            {SHOW_HORIZONTAL_BANNER && (
+              <div style={{ marginBottom: '16px' }}>
+                <span style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                  Banner Horizontal
+                </span>
+                <div
+                  style={{
+                    position: 'relative',
+                    cursor: 'pointer',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    border: inlineSgdbTarget === 'cover' ? '3px solid #3cf2e6' : '3px solid rgba(255, 255, 255, 0.08)',
+                    transition: 'all 0.2s ease',
+                    transform: inlineSgdbTarget === 'cover' ? 'scale(1.02)' : 'none',
+                    boxShadow: inlineSgdbTarget === 'cover' ? '0 0 15px rgba(60, 242, 230, 0.35)' : 'none'
+                  }}
+                  onClick={() => setInlineSgdbTarget('cover')}
+                >
+                  <CachedImage
+                    style={{ width: '100%', aspectRatio: '1600/650', objectFit: 'cover', display: 'block' }}
+                    src={editCover || editSquare || fallbackImage}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Informações do Jogo */}
             <div style={{
@@ -785,6 +823,7 @@ export default function InlineGameSettings({ game, onClose }: Props) {
           </button>
           <button
             onClick={async () => {
+              setInlineSgdbTarget(null)
               try {
                 if (game.runner === 'sideload') {
                   const updatedGame: GameInfo = {
@@ -842,8 +881,6 @@ export default function InlineGameSettings({ game, onClose }: Props) {
                 }
               } catch (err) {
                 console.error('Error saving inline SteamGridDB art:', err)
-              } finally {
-                setInlineSgdbTarget(null)
               }
             }}
             style={{

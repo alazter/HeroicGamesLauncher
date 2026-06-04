@@ -4,6 +4,8 @@ import cx from 'classnames'
 import GameCard from '../GameCard'
 import ContextProvider from 'frontend/state/ContextProvider'
 import { useTranslation } from 'react-i18next'
+import { sideloadLibrary, gameOverridesStore } from 'frontend/helpers/electronStores'
+import useGlobalState from 'frontend/state/GlobalStateV2'
 
 interface CustomStore {
   id: string
@@ -55,7 +57,7 @@ const GamesList = ({
   isRecent = false,
   isFavourite = false
 }: Props): JSX.Element => {
-  const { gameUpdates, allTilesInColor, titlesAlwaysVisible } =
+  const { gameUpdates, allTilesInColor, titlesAlwaysVisible, refreshLibrary } =
     useContext(ContextProvider)
   const { t } = useTranslation()
   const listRef = useRef<HTMLDivElement | null>(null)
@@ -154,6 +156,48 @@ const GamesList = ({
     })
   }, [library, activeStoreFilter, assignments])
 
+  const allSelected = selectedGames.length === filteredLibrary.length && filteredLibrary.length > 0
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedGames([])
+    } else {
+      setSelectedGames(filteredLibrary)
+    }
+  }
+
+  const handleBulkUninstall = async () => {
+    if (selectedGames.length === 0) return
+    const confirmUninstall = window.confirm(
+      `Deseja realmente desinstalar/remover da biblioteca o(s) ${selectedGames.length} jogo(s) selecionado(s)?`
+    )
+    if (!confirmUninstall) return
+
+    const shouldRemovePrefix = window.confirm(
+      `Deseja remover também os arquivos de prefixo (Wineprefix) dos jogos selecionados (se existirem)?`
+    )
+    const shouldRemoveSetting = window.confirm(
+      `Deseja remover também as configurações e logs dos jogos selecionados?`
+    )
+
+    try {
+      window.api.logInfo(`handleBulkUninstall: Iniciando desinstalação de ${selectedGames.length} jogo(s)`)
+      
+      const appsToUninstall = selectedGames.map(g => ({
+        appName: g.app_name,
+        runner: g.runner
+      }))
+
+      await window.api.bulkUninstall(appsToUninstall, shouldRemovePrefix, shouldRemoveSetting)
+
+      window.dispatchEvent(
+        new CustomEvent('heroicToggleMassEdit', { detail: { active: false } })
+      )
+    } catch (err) {
+      window.api.logError(`Error during bulk uninstall: ${String(err)}`)
+    }
+  }
+
   useEffect(() => {
     if (filteredLibrary.length) {
       const options = { rootMargin: '500px', threshold: 0 }
@@ -196,7 +240,7 @@ const GamesList = ({
 
   return (
     <>
-      {isMassEditMode && selectedGames.length > 0 && (
+      {isMassEditMode && (
         <div
           style={{
             position: 'fixed',
@@ -209,27 +253,79 @@ const GamesList = ({
             borderRadius: '12px',
             zIndex: 9999,
             display: 'flex',
-            gap: '20px',
+            gap: '15px',
             alignItems: 'center',
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            border: '1px solid #4CAF50',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             color: '#fff'
           }}
         >
-          <span style={{ fontWeight: 'bold' }}>
+          <span style={{ fontWeight: 'bold', fontSize: '13px' }}>
             {selectedGames.length} jogo(s) selecionado(s)
           </span>
+          <button
+            onClick={handleToggleSelectAll}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontWeight: '600',
+              fontSize: '12px',
+              cursor: 'pointer',
+              transition: 'background 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            {allSelected ? 'Desmarcar Todos' : 'Marcar Todos'}
+          </button>
+          <button
+            onClick={handleBulkUninstall}
+            disabled={selectedGames.length === 0}
+            style={{
+              background: selectedGames.length === 0 ? 'rgba(244, 67, 54, 0.3)' : '#f44336',
+              color: selectedGames.length === 0 ? 'rgba(255,255,255,0.4)' : '#fff',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontWeight: '600',
+              fontSize: '12px',
+              cursor: selectedGames.length === 0 ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              if (selectedGames.length > 0) {
+                e.currentTarget.style.background = '#d32f2f'
+              }
+            }}
+            onMouseOut={(e) => {
+              if (selectedGames.length > 0) {
+                e.currentTarget.style.background = '#f44336'
+              }
+            }}
+          >
+            Desinstalar
+          </button>
+          <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.15)' }} />
           <select
             value={selectedStore}
+            disabled={selectedGames.length === 0}
             onChange={(e) => setSelectedStore(e.target.value)}
             style={{
               background: '#13171c',
-              color: '#fff',
+              color: selectedGames.length === 0 ? 'rgba(255,255,255,0.4)' : '#fff',
               border: '1px solid rgba(255,255,255,0.2)',
-              padding: '8px 12px',
+              padding: '6px 12px',
               borderRadius: '6px',
               outline: 'none',
-              cursor: 'pointer'
+              fontSize: '12px',
+              cursor: selectedGames.length === 0 ? 'not-allowed' : 'pointer'
             }}
           >
             <option value="">Atribuir à Loja...</option>
@@ -241,14 +337,27 @@ const GamesList = ({
           </select>
           <button
             onClick={handleAssign}
+            disabled={selectedGames.length === 0 || !selectedStore}
             style={{
-              background: '#4CAF50',
-              color: '#fff',
+              background: selectedGames.length === 0 || !selectedStore ? 'rgba(76, 175, 80, 0.3)' : '#4CAF50',
+              color: selectedGames.length === 0 || !selectedStore ? 'rgba(255,255,255,0.4)' : '#fff',
               border: 'none',
-              padding: '8px 20px',
+              padding: '6px 16px',
               borderRadius: '6px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
+              fontWeight: '600',
+              fontSize: '12px',
+              cursor: selectedGames.length === 0 || !selectedStore ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              if (selectedGames.length > 0 && selectedStore) {
+                e.currentTarget.style.background = '#388E3C'
+              }
+            }}
+            onMouseOut={(e) => {
+              if (selectedGames.length > 0 && selectedStore) {
+                e.currentTarget.style.background = '#4CAF50'
+              }
             }}
           >
             Aplicar

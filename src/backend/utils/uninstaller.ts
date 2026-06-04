@@ -8,12 +8,19 @@ import { notify } from 'backend/dialog/dialog'
 import { logError, logInfo, LogPrefix } from 'backend/logger'
 import { gameManagerMap } from 'backend/storeManagers'
 import { sendGameStatusUpdate } from 'backend/utils'
-import { Runner } from 'common/types'
+import { Runner, GameInfo } from 'common/types'
 import { storeMap } from 'common/utils'
 import { Event } from 'electron'
 import { existsSync, readdirSync, rmSync } from 'graceful-fs'
 import i18next from 'i18next'
 import { join } from 'path'
+import { libraryStore } from 'backend/storeManagers/sideload/electronStores'
+import { getGameInfo as getSideloadGameInfo } from 'backend/storeManagers/sideload/games'
+import { removeShortcuts as removeShortcutsUtil } from 'backend/shortcuts/shortcuts/shortcuts'
+import { removeNonSteamGame } from 'backend/shortcuts/nonesteamgame/nonesteamgame'
+import { removeRecentGame } from 'backend/recent_games/recent_games'
+import { sendFrontendMessage } from 'backend/ipc'
+
 
 export const removePrefix = async (appName: string, runner: Runner) => {
   const { winePrefix } = await gameManagerMap[runner].getSettings(appName)
@@ -135,4 +142,99 @@ export const uninstallGameCallback = async (
     runner,
     status: 'done'
   })
+}
+
+export const bulkUninstallCallback = async (
+  event: Event,
+  apps: { appName: string; runner: Runner }[],
+  shouldRemovePrefix: boolean,
+  shouldRemoveSetting: boolean
+) => {
+  logInfo(`Bulk uninstalling ${apps.length} apps`, LogPrefix.Backend)
+  const sideloadApps = apps.filter((a) => a.runner === 'sideload')
+
+  if (sideloadApps.length > 0) {
+    const appNamesToUninstall = new Set(sideloadApps.map((a) => a.appName))
+    const old = libraryStore.get('games', [])
+    const current = old.filter((a: GameInfo) => !appNamesToUninstall.has(a.app_name))
+
+    for (const app of sideloadApps) {
+      try {
+        sendGameStatusUpdate({
+          appName: app.appName,
+          runner: 'sideload',
+          status: 'uninstalling'
+        })
+        const gameInfo = getSideloadGameInfo(app.appName)
+        if (shouldRemovePrefix) {
+          await removePrefix(app.appName, 'sideload')
+        }
+        removeShortcutsUtil(gameInfo)
+        removeRecentGame(app.appName)
+        removeNonSteamGame({ gameInfo })
+
+        sendGameStatusUpdate({
+          appName: app.appName,
+          runner: 'sideload',
+          status: 'done'
+        })
+      } catch (err) {
+        logError(
+          `Error cleaning up sideload app ${app.appName}: ${String(err)}`,
+          LogPrefix.Backend
+        )
+      }
+    }
+
+    libraryStore.set('games', current)
+  }
+
+  const otherApps = apps.filter((a) => a.runner !== 'sideload')
+  for (const app of otherApps) {
+    try {
+      sendGameStatusUpdate({
+        appName: app.appName,
+        runner: app.runner,
+        status: 'uninstalling'
+      })
+      await gameManagerMap[app.runner].uninstall({
+        appName: app.appName,
+        shouldRemovePrefix
+      })
+      if (shouldRemovePrefix) {
+        await removePrefix(app.appName, app.runner)
+      }
+      if (shouldRemoveSetting) {
+        removeSettingsAndLogs(app.appName)
+      }
+      removeFixFile(app.appName, app.runner)
+
+      sendGameStatusUpdate({
+        appName: app.appName,
+        runner: app.runner,
+        status: 'done'
+      })
+    } catch (err) {
+      logError(
+        `Error uninstalling game ${app.appName} (${app.runner}): ${String(err)}`,
+        LogPrefix.Backend
+      )
+    }
+  }
+
+  // Notify frontend to refresh libraries
+  const runnersToRefresh = new Set(apps.map((a) => a.runner))
+  for (const runner of runnersToRefresh) {
+    sendFrontendMessage('refreshLibrary', runner)
+  }
+
+  notify({
+    title: i18next.t('notify.uninstalled.bulk.title', 'Bulk Uninstall Finished'),
+    body: i18next.t('notify.uninstalled.bulk.body', {
+      count: apps.length,
+      defaultValue: '{{count}} game(s) uninstalled successfully.'
+    })
+  })
+
+  logInfo('Bulk uninstall finished', LogPrefix.Backend)
 }

@@ -1,64 +1,58 @@
-# Review das Alterações - 03/06/2026
+# Review das Alterações - 04/06/2026
 
-Compilado de todas as modificações de estilo, alinhamento, estrutura e novas funcionalidades aplicadas na tela de Configurações Inline e Diálogos do Heroic Games Launcher.
+Compilado de todas as modificações de estilo, alinhamento, estrutura e novas funcionalidades aplicadas no Heroic Games Launcher hoje.
 
 ---
 
 ## 📋 Resumo das Alterações Realizadas
 
-### 1. Novo Gerenciador Inline de Capas/Artes (SteamGridDB)
-* **Problema:** A interface anterior necessitava de modais complexos e múltiplos passos para gerenciar capas de jogos do SteamGridDB.
+### 1. Novo Auto-Scanner de Jogos Instalados (Sideload Auto-Scanner)
+* **Problema:** Usuários precisavam adicionar manualmente cada jogo instalado externamente no PC por meio do Sideload, o que requeria localizar o executável manualmente.
 * **Solução:**
-  - Adicionamos um gerenciador inline completo diretamente no painel lateral de configurações `InlineGameSettings/index.tsx`.
-  - Criamos uma visualização de duas colunas acionada ao clicar em "Editar App/Jogo":
-    - **Coluna Esquerda:** Exibe previews da Capa Vertical (Grids) e do Banner Horizontal (Heroes) com destaques visuais (bordas azul-turquesa e sombras neon) e o ícone da plataforma do jogo.
-    - **Coluna Direita:** Renderiza o componente `SteamGridDBPicker` integrado para pesquisa e seleção de artes diretamente do banco de dados.
-  - Implementamos um rodapé com ações de "Cancelar" e "Terminar" para confirmar as mudanças e sincronizar os metadados locais de capas/quadrados tanto para jogos sideload quanto para os demais.
+  - Criamos o módulo `src/backend/storeManagers/sideload/scanner.ts`.
+  - Implementamos a busca automática via PowerShell na Registry do Windows para encontrar jogos instalados no PC.
+  - Criamos regras inteligentes de filtragem heurística para ignorar softwares gerais, drivers e atualizadores não-jogos.
+  - Implementamos um algoritmo de pontuação para correlacionar o nome da pasta com arquivos executáveis a fim de selecionar o binário correto do jogo.
+  - Integramos com a API do SteamGridDB para obter automaticamente capas e imagens para os jogos detectados.
+  - Adicionamos a funcionalidade de Blacklist para permitir ignorar jogos detectados que o usuário não quer importar.
+  - Criamos a opção de exportar o log de varredura para um arquivo `.txt`.
 
-### 2. Separação de Elementos e Alinhamento Preciso com CSS Grid
-* **Problema:** As labels e seus respectivos botões de ajuda ("InfoBox" e "Ajuda") compartilhavam o mesmo contêiner Flex, movendo-se e comportando-se como um único bloco.
-* **Solução:** 
-  - Desacoplamos os labels do executável alternativo ("Selecionar executável") e dos argumentos de inicialização ("Argumentos do jogo") de seus botões de ajuda.
-  - Implementamos um layout **CSS Grid** de duas linhas no contêiner pai: `display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'end', rowGap: '4px'`.
-  - O label (coluna 1) e o botão de ajuda (coluna 2) alinham-se horizontalmente lado a lado no topo como irmãos independentes no DOM.
-  - O campo de entrada correspondente ocupa toda a largura na linha de baixo (`gridColumn: '1 / -1'`).
-  - Adicionamos `justifySelf: 'start'` e `textAlign: 'left'` às labels para anular heranças de alinhamento central e fixá-las à esquerda.
-
-### 3. Ajuste de Tamanho de Fonte e Margens de Labels
-* **Problema:** As labels e vãos visuais precisavam de refinamento no tamanho e espaçamento.
+### 2. Redesign Completo do Diálogo de Sideload (SideloadDialog)
+* **Problema:** A interface de Sideload manual possuía campos desorganizados, caixas de imagens desalinhadas e falta de suporte para o novo auto-scanner.
 * **Solução:**
-  - Aumentamos o tamanho de fonte das cinco labels principais ("Selecionar executável", "Argumentos do jogo...", as duas labels de scripts e "Variáveis de ambiente") de `var(--text-sm)` para `var(--text-md)` (tamanho base de 16px).
-  - Ajustamos a margem inferior para `-10px` nas labels inline do painel e `4px` nas demais para manter a proximidade ideal com as caixas de texto.
-  - Realocamos a folha de estilos local (`<style>`) para a raiz do painel `inline-game-settings-container`, garantindo que as regras tipográficas e de estilo permaneçam carregadas de forma definitiva na tela (corrigindo o problema do lifecycle no componente de renomear).
+  - Reformulamos a estrutura em `SideloadDialog` criando abas diferenciadas: **Adicionar Manualmente** e **Scanner Automático**.
+  - Criamos um painel lateral esquerdo simulando o Hero Panel (`.simulated-hero-panel`), que apresenta a capa vertical em proporção de tela (`aspect-ratio: 2/3`) e links rápidos de ação com ícones correspondentes.
+  - Reorganizamos a aba do Scanner Automático para listar todos os jogos detectados com capas em miniatura, nomes e binários, oferecendo controles para "Importar" ou enviar para a "Blacklist".
+  - Refatoramos todo o CSS em `SideloadDialog/index.scss` usando flexbox de duas colunas, bordas com efeitos premium e scroll otimizado.
 
-### 4. Ajuste de Alinhamento e Tipografia na Tabela de Variáveis de Ambiente
-* **Problema:** O cabeçalho "Valor" e o link "Ajuda" estavam desalinhados em relação às bordas das caixas de entrada abaixo deles.
+### 3. Funcionalidade de Desinstalação em Lote (Bulk Uninstall)
+* **Problema:** Não existia uma forma nativa de selecionar vários jogos na biblioteca e desinstalá-los ou removê-los em massa.
 * **Solução:**
-  - Removemos o padding horizontal (`padding: 0 0 4px`) dos cabeçalhos da tabela (`th`) no arquivo `TwoColTableInput/index.css`. Agora a palavra "Valor" inicia alinhada à borda esquerda do input e "Ajuda" termina alinhada à borda direita.
-  - Removemos a formatação de negrito herdada dos elementos `<th>` aplicando `font-weight: normal` a eles.
+  - Implementamos o IPC handler `bulkUninstall` em `src/backend/utils/uninstaller.ts`.
+  - Adicionamos suporte à desinstalação paralela com limpeza de prefixos (Wineprefix), logs e configurações locais.
+  - Na tela de Biblioteca (`GamesList/index.tsx`), atualizamos o painel flutuante do modo Mass Edit (Modo de Edição em Lote) adicionando opções de "Marcar Todos", "Desmarcar Todos" e o botão "Desinstalar" com transições fluidas e desabilitação condicional se nenhum jogo for selecionado.
 
-### 5. Correção do Pop-up de Ajuda (InfoBox) nas Variáveis de Ambiente
-* **Problema:** A janela flutuante de ajuda saía da tela pela direita e o texto interno ficava truncado/sem quebra de linha.
+### 4. Botão de Alternância de Layout (Novo Modo / Modo Antigo)
+* **Problema:** Havia a necessidade de alternar facilmente entre o novo layout de configurações Inline no painel lateral ("Novo Modo") e o gerenciamento clássico baseado em modais ("Modo Antigo").
 * **Solução:**
-  - Adicionamos o atributo `align="right"` à `<InfoBox>` na tabela de variáveis, fazendo o pop-up expandir para a esquerda e ficar 100% visível na tela.
-  - Adicionamos `whiteSpace: 'normal'` ao estilo inline da popover no `PopoverComponent` para neutralizar a propriedade `white-space: nowrap` herdada da tabela, permitindo o fluxo e quebra de linhas normal das instruções de texto.
-
-### 6. Visibilidade do Filtro de Alfabeto
-* **Problema:** O filtro de alfabeto sumia da biblioteca ao abrir as configurações inline de um jogo.
-* **Solução:**
-  - Alteramos a renderização de `<LibraryHeader />` em `Library/index.tsx` para rodar de forma incondicional, mantendo o filtro de letras e a contagem de jogos visíveis e fixados de forma sticky no topo da tela.
+  - Implementamos no painel de Personalização (`Personalization/index.tsx`) um controle switch premium (`premium-switch`) posicionado na barra de navegação mockada.
+  - O estado é persistido no localStorage (`heroic_use_inline_panel`) e propaga-se dinamicamente por meio de eventos globais customizados (`heroicUseInlinePanelChanged`).
 
 ---
 
-## 🛠️ Arquivos Modificados
-- [PopoverComponent/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/components/UI/PopoverComponent/index.tsx)
-- [TextInputField/index.css](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/components/UI/TextInputField/index.css)
-- [TwoColTableInput/index.css](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/components/UI/TwoColTableInput/index.css)
-- [TwoColTableInput/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/components/UI/TwoColTableInput/index.tsx)
-- [InlineGameSettings/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InlineGameSettings/index.tsx)
-- [SideloadDialog/index.scss](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InstallModal/SideloadDialog/index.scss)
-- [SideloadDialog/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InstallModal/SideloadDialog/index.tsx)
-- [LibraryHeader/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/LibraryHeader/index.tsx)
-- [Library/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/index.tsx)
-- [EnvVariablesTable.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Settings/components/EnvVariablesTable.tsx)
-- [LauncherArgs.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Settings/components/LauncherArgs.tsx)
+## 🛠️ Arquivos Modificados e Criados
+
+### Backend
+- [NEW] [scanner.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/storeManagers/sideload/scanner.ts)
+- [MODIFY] [main.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/main.ts)
+- [MODIFY] [uninstaller.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/utils/uninstaller.ts)
+- [MODIFY] [game_overrides/index.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/game_overrides/index.ts)
+- [MODIFY] [storeManagers/sideload/library.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/storeManagers/sideload/library.ts)
+
+### Frontend
+- [NEW] [index.css](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Personalization/index.css)
+- [MODIFY] [SideloadDialog/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InstallModal/SideloadDialog/index.tsx)
+- [MODIFY] [SideloadDialog/index.scss](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InstallModal/SideloadDialog/index.scss)
+- [MODIFY] [GamesList/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/GamesList/index.tsx)
+- [MODIFY] [InlineGameSettings/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Library/components/InlineGameSettings/index.tsx)
+- [MODIFY] [Personalization/index.tsx](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/frontend/screens/Personalization/index.tsx)

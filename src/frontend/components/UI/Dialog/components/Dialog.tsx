@@ -21,6 +21,7 @@ interface DialogProps {
   children: ReactNode
   showCloseButton: boolean
   onClose: () => void
+  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false
 }
 
 const StyledPaper = styled(Paper)(() => ({
@@ -38,7 +39,8 @@ export const Dialog: React.FC<DialogProps> = ({
   children,
   className,
   showCloseButton = false,
-  onClose
+  onClose,
+  maxWidth = 'md'
 }) => {
   const [open, setOpen] = useState(true)
   const { disableDialogBackdropClose } = useContext(ContextProvider)
@@ -65,7 +67,7 @@ export const Dialog: React.FC<DialogProps> = ({
         close()
       }}
       scroll="paper"
-      maxWidth="md"
+      maxWidth={maxWidth}
       PaperComponent={StyledPaper}
       PaperProps={{
         className

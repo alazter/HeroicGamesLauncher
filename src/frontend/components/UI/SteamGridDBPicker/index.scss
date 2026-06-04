@@ -79,10 +79,11 @@
 
   &__grids {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 130px);
+    grid-template-columns: repeat(auto-fill, 168px);
     gap: var(--space-md);
     overflow-y: auto;
-    max-height: 62vh;
+    flex: 1;
+    min-height: 0;
     padding-top: 12px;
     padding-bottom: 1rem;
     width: 100%;
@@ -94,8 +95,8 @@
 
   &__grid-item {
     cursor: pointer;
-    width: 130px;
-    height: 195px;
+    width: 168px;
+    height: 252px;
     border-radius: 8px;
     overflow: hidden;
     transition:
@@ -118,7 +119,6 @@
 
   &--heroes &__grids {
     grid-template-columns: repeat(auto-fill, 246px);
-    max-height: 62vh;
   }
 
   &--heroes &__grid-item {

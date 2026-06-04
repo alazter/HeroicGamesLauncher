@@ -29,11 +29,28 @@ export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
   const [panelTitle, setPanelTitle] = useState<string>(
     () => game.overrides?.title || game.title
   )
+  const [panelSquare, setPanelSquare] = useState<string>(
+    () => game.overrides?.art_square || game.art_square || ''
+  )
+  const [panelCover, setPanelCover] = useState<string>(
+    () => game.overrides?.art_cover || game.art_cover || ''
+  )
 
   useEffect(() => {
     setTsInfo(timestampStore.get_nodefault(game.app_name))
     setPanelTitle(game.overrides?.title || game.title)
-  }, [game.app_name, status, game.title, game.overrides?.title])
+    setPanelSquare(game.overrides?.art_square || game.art_square || '')
+    setPanelCover(game.overrides?.art_cover || game.art_cover || '')
+  }, [
+    game.app_name,
+    status,
+    game.title,
+    game.overrides?.title,
+    game.art_square,
+    game.overrides?.art_square,
+    game.art_cover,
+    game.overrides?.art_cover
+  ])
 
   useEffect(() => {
     const handleTitleChanged = (e: Event) => {
@@ -50,6 +67,25 @@ export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
     window.addEventListener('heroicGameTitleChanged', handleTitleChanged)
     return () =>
       window.removeEventListener('heroicGameTitleChanged', handleTitleChanged)
+  }, [game.app_name, game.runner])
+
+  useEffect(() => {
+    const handleCoverChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        appName: string
+        runner: Runner
+        art_cover: string
+        art_square: string
+      }>
+      const { appName: eventAppName, runner: eventRunner, art_cover, art_square } = customEvent.detail
+      if (eventAppName === game.app_name && eventRunner === game.runner) {
+        setPanelSquare(art_square)
+        setPanelCover(art_cover)
+      }
+    }
+    window.addEventListener('heroicGameCoverChanged', handleCoverChanged)
+    return () =>
+      window.removeEventListener('heroicGameCoverChanged', handleCoverChanged)
   }, [game.app_name, game.runner])
 
   const playTimeStr = useMemo(() => {
@@ -181,7 +217,7 @@ export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
     }}>
       {/* Imagem */}
       <img
-        src={game.art_cover || ''}
+        src={panelSquare || panelCover || ''}
         alt={panelTitle}
         style={{
           width: 'calc(100% + 30px)',

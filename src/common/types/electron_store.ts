@@ -87,6 +87,7 @@ export interface StoreStructure {
     games: GameInfo[]
     // FIXME: Not sure if this is correct, seems like this key is only used once
     installed: InstalledInfo[]
+    blacklist?: Array<{ title: string; executable: string }>
   }
   downloadManager: {
     queue: DMQueueElement[]

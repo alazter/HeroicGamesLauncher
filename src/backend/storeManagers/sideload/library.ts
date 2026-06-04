@@ -121,3 +121,15 @@ export function changeVersionPinnedStatus() {
     'changeVersionPinnedStatus not implemented on Sideload Library Manager'
   )
 }
+
+export function updateSideloadedApps(appsToUpdate: GameInfo[]): void {
+  const current = libraryStore.get('games', [])
+  for (const app of appsToUpdate) {
+    const idx = current.findIndex((g) => g.app_name === app.app_name)
+    if (idx !== -1) {
+      current[idx] = { ...current[idx], ...app }
+    }
+  }
+  libraryStore.set('games', current)
+  sendFrontendMessage('refreshLibrary', 'sideload')
+}

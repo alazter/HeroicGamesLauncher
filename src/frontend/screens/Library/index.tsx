@@ -1178,6 +1178,8 @@ export default memo(function Library(): JSX.Element {
         latestGame.overrides?.title !== selectedInlineGame.overrides?.title ||
         latestGame.art_cover !== selectedInlineGame.art_cover ||
         latestGame.overrides?.art_cover !== selectedInlineGame.overrides?.art_cover ||
+        latestGame.art_square !== selectedInlineGame.art_square ||
+        latestGame.overrides?.art_square !== selectedInlineGame.overrides?.art_square ||
         latestGame.is_installed !== selectedInlineGame.is_installed ||
         JSON.stringify(latestGame.install) !== JSON.stringify(selectedInlineGame.install)
       ) {

@@ -14,6 +14,7 @@ import type {
   ExecResult,
   ExtraInfo,
   GameAchievement,
+  GameCandidate,
   GameInfo,
   GamepadActionArgs,
   GameSettings,
@@ -89,6 +90,7 @@ interface SyncIPCFunctions {
   clipboardWriteText: (text: string) => void
   processShortcut: (combination: string) => void
   addNewApp: (args: GameInfo) => void
+  updateSideloadedApps: (apps: GameInfo[]) => void
   showLogFileInFolder: (args: GetLogFileArgs) => void
   addShortcut: (appName: string, runner: Runner, fromMenu: boolean) => void
   removeShortcut: (appName: string, runner: Runner) => void
@@ -130,6 +132,11 @@ interface SyncIPCFunctions {
     art_cover?: string
     art_square?: string
   }) => void
+  setAllGameOverrides: (overrides: Record<string, {
+    title?: string
+    art_cover?: string
+    art_square?: string
+  }>) => void
 }
 
 /*
@@ -225,6 +232,11 @@ interface AsyncIPCFunctions {
     runner: Runner,
     shouldRemovePrefix: boolean,
     shoudlRemoveSetting: boolean
+  ) => Promise<void>
+  bulkUninstall: (
+    apps: { appName: string; runner: Runner }[],
+    shouldRemovePrefix: boolean,
+    shouldRemoveSetting: boolean
   ) => Promise<void>
   repair: (appName: string, runner: Runner) => Promise<void>
   moveInstall: (args: MoveGameArgs) => Promise<void>
@@ -364,6 +376,17 @@ interface AsyncIPCFunctions {
     styles?: string[]
     dimensions?: string[]
   }) => Promise<Array<{ id: number; url: string; thumb: string }>>
+  discoverInstalledGames: () => Promise<GameCandidate[]>
+  importSelectedGames: (args: {
+    gamesToImport: GameCandidate[]
+    gamesToBlacklist: GameCandidate[]
+  }) => Promise<string[]>
+  undoImport: (appNames: string[]) => Promise<void>
+  addGameToBlacklist: (args: { title: string; executable: string }) => Promise<void>
+  exportScanLog: (text: string) => Promise<boolean>
+  scanInstalledGames: () => Promise<{ count: number; games: string[] }>
+  clearBlacklist: () => Promise<void>
+  getBlacklist: () => Promise<Array<{ title: string; executable: string }>>
 }
 
 interface FrontendMessages {
