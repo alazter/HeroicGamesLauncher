@@ -105,6 +105,8 @@ export default function SideloadDialog({
   const [scannedImports, setScannedImports] = useState<GameCandidate[]>([])
   const [scannedBlacklist, setScannedBlacklist] = useState<GameCandidate[]>([])
   const [hideDuplicates, setHideDuplicates] = useState(true)
+  const [showBlacklistModal, setShowBlacklistModal] = useState(false)
+  const [blacklistItems, setBlacklistItems] = useState<Array<{ title: string; executable: string }>>([])
 
   function handleTitle(value: string) {
     value = removeSpecialcharacters(value)
@@ -385,25 +387,58 @@ export default function SideloadDialog({
     appPlatform !== 'linux' &&
     appPlatform !== 'Browser'
 
-  // Helper to check if a scanned candidate is already in any of the library stores
+  // Helper to check if a scanned candidate is already in the sideloaded library store
   const isCandidateAlreadyAdded = useCallback((candidate: GameCandidate) => {
-    const normExecutable = candidate.executable.replace(/\\/g, '/').toLowerCase();
-    const normTitle = candidate.title.trim().toLowerCase();
+    // Helper para normalizar caminhos
+    const normalizePath = (p: string) => {
+      if (!p) return ''
+      return p.replace(/\\/g, '/').toLowerCase().trim()
+    }
+
+    // Helper para extrair o diretório pai
+    const getDirName = (p: string) => {
+      const parts = p.split('/')
+      if (parts.length > 1) {
+        parts.pop()
+        return parts.join('/')
+      }
+      return p
+    }
+
+    // Helper para normalizar títulos de forma fuzzy alfanumérica
+    const normalizeTitle = (t: string) => {
+      if (!t) return ''
+      return t
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[®™©]/g, '') // Remove símbolos especiais
+        .replace(/[^a-z0-9]/gi, '') // Mantém apenas letras e números
+        .toLowerCase()
+        .trim()
+    }
+
+    const normExecutable = normalizePath(candidate.executable)
+    const normTitle = normalizeTitle(candidate.title)
+    const scannedDir = getDirName(normExecutable)
 
     const isMatch = (g: GameInfo) => {
-      const gExe = g.install?.executable?.replace(/\\/g, '/').toLowerCase();
-      const gTitle = g.title?.trim().toLowerCase();
-      return (gExe && gExe === normExecutable) || (gTitle && gTitle === normTitle);
-    };
+      const gTitle = normalizeTitle(g.title || '')
+      if (gTitle && gTitle === normTitle) {
+        return true
+      }
 
-    return (
-      sideloadedLibrary?.some(isMatch) ||
-      epic?.library?.some(isMatch) ||
-      gog?.library?.some(isMatch) ||
-      amazon?.library?.some(isMatch) ||
-      zoom?.library?.some(isMatch)
-    );
-  }, [sideloadedLibrary, epic, gog, amazon, zoom]);
+      const gExe = g.install?.executable ? normalizePath(g.install.executable) : ''
+      if (gExe && scannedDir) {
+        const gDir = getDirName(gExe)
+        if (gDir === scannedDir) {
+          return true
+        }
+      }
+      return false
+    }
+
+    return sideloadedLibrary?.some(isMatch) || false
+  }, [sideloadedLibrary]);
 
   // Auto-scanner functions
   const handleScanCandidates = async () => {
@@ -525,6 +560,22 @@ export default function SideloadDialog({
   const handleClearBlacklist = async () => {
     await window.api.clearBlacklist()
     setBlacklistCount(0)
+    setBlacklistItems([])
+  }
+
+  const handleViewBlacklist = async () => {
+    const list = await window.api.getBlacklist()
+    list.sort((a, b) => a.title.localeCompare(b.title))
+    setBlacklistItems(list)
+    setShowBlacklistModal(true)
+  }
+
+  const handleRemoveFromBlacklist = async (executable: string) => {
+    await window.api.removeGameFromBlacklist(executable)
+    const list = await window.api.getBlacklist()
+    list.sort((a, b) => a.title.localeCompare(b.title))
+    setBlacklistItems(list)
+    setBlacklistCount(list.length)
   }
 
   const handleImportSelectedGames = async () => {
@@ -963,16 +1014,14 @@ export default function SideloadDialog({
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        {blacklistCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={handleClearBlacklist}
-                            className="button is-danger is-outlined"
-                            style={{ padding: '4px 12px', fontSize: '12px', height: '32px' }}
-                          >
-                            Limpar Blacklist ({blacklistCount})
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={handleViewBlacklist}
+                          className="button is-warning is-outlined"
+                          style={{ padding: '4px 12px', fontSize: '12px', height: '32px' }}
+                        >
+                          Ver Blacklist ({blacklistCount})
+                        </button>
                         <button
                           type="button"
                           onClick={handleScanCandidates}
@@ -1221,6 +1270,137 @@ export default function SideloadDialog({
           )}
         </div>
       </div>
+
+      {showBlacklistModal && (
+        <div className="blacklist-modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div className="blacklist-modal-content" style={{
+            background: 'var(--body-background, #1a1b26)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            width: '600px',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#fff' }}>
+                Jogos na Blacklist ({blacklistItems.length})
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowBlacklistModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  padding: '4px'
+                }}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '6px' }}>
+              {blacklistItems.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.4)', padding: '40px 0' }}>
+                  A blacklist está vazia.
+                </div>
+              ) : (
+                blacklistItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '500', color: '#fff', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.title}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
+                        {item.executable}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="button outline"
+                      onClick={() => handleRemoveFromBlacklist(item.executable)}
+                      style={{
+                        padding: '6px',
+                        borderRadius: '6px',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        color: '#ff4444',
+                        cursor: 'pointer',
+                        minWidth: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        background: 'transparent'
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faTrash} style={{ width: '12px' }} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              paddingTop: '16px'
+            }}>
+              <div>
+                {blacklistItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearBlacklist}
+                    className="button is-danger is-outlined"
+                    style={{ padding: '6px 16px', fontSize: '13px' }}
+                  >
+                    Limpar Blacklist
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                className="button is-secondary"
+                onClick={() => setShowBlacklistModal(false)}
+                style={{ padding: '6px 16px', fontSize: '13px' }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DialogContent>
   )
 }

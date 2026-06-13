@@ -58,7 +58,7 @@ export default React.memo(function HeroicVersion() {
   )[0]
   const shouldShowUpdates = newBeta || newStable
 
-  const version = heroicVersion
+  const version = heroicVersion.replace('-beta', ' Beta').replace('-alpha', ' Alpha')
 
   return (
     <div className="heroicVersionContainer" data-tour="sidebar-version">

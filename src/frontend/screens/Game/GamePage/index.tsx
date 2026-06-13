@@ -441,7 +441,7 @@ export default React.memo(function GamePage(): JSX.Element | null {
                         store={runner}
                       />
                       <div className="store-icon">
-                        <StoreLogos runner={runner} />
+                        <StoreLogos runner={runner} appName={gameInfo.app_name} />
                       </div>
 
                       <h1 style={{ opacity: art_logo ? 0 : 1 }}>{title}</h1>

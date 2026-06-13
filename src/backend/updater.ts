@@ -33,7 +33,7 @@ async function showAutoupdateDialog() {
   }
 
   let { response } = await dialog.showMessageBox({
-    title: t('box.info.update.title', 'Heroic Games Launcher'),
+    title: t('box.info.update.title', 'Ghost Games Launcher'),
     message: t('box.info.update.message', 'There is a new Version available!'),
     detail: messageDetail,
 
@@ -50,7 +50,7 @@ async function showAutoupdateDialog() {
   }
   if (response === 2) {
     shell.openExternal(
-      'https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases'
+      'https://github.com/alazter/HeroicGamesLauncher/releases'
     )
     showAutoupdateDialog()
   }

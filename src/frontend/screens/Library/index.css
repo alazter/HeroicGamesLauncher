@@ -67,7 +67,7 @@
   width: 5vh;
   height: 5vh;
   position: fixed;
-  bottom: 3%;
+  bottom: calc(3% + 5vh + 12px);
   right: 0;
   margin: var(--space-md) var(--space-xl);
   border: 1px var(--accent) solid;
@@ -88,6 +88,38 @@
 #backToTopBtn:hover {
   opacity: 1;
   background-color: rgba(20, 24, 30, 0.98) !important;
+}
+
+#goToBottomBtn {
+  border-radius: 100%;
+  width: 5vh;
+  height: 5vh;
+  position: fixed;
+  bottom: 3%;
+  right: 0;
+  margin: var(--space-md) var(--space-xl);
+  border: 1px var(--accent) solid;
+  background-color: rgba(20, 24, 30, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  z-index: 9;
+  visibility: hidden;
+  transition: all 0.3s ease-in;
+  cursor: pointer;
+  opacity: 0.95;
+}
+
+#goToBottomBtn:hover {
+  opacity: 1;
+  background-color: rgba(20, 24, 30, 0.98) !important;
+}
+
+#goToBottomArrow {
+  font-size: 3.2vh;
 }
 
 .listing {

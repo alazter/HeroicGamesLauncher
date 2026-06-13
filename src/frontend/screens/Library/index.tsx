@@ -12,6 +12,7 @@ import {
 } from 'react'
 
 import ArrowDropUp from '@mui/icons-material/ArrowDropUp'
+import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 import { Header, UpdateComponent } from 'frontend/components/UI'
 import { useTranslation } from 'react-i18next'
 import Fuse from 'fuse.js'
@@ -82,7 +83,10 @@ export default memo(function Library(): JSX.Element {
   }
 
   const [cardZoom, setCardZoom] = useState<number>(() => {
-    return parseInt(storage.getItem('heroic_card_zoom') || '180')
+    const steps = [160, 180, 200, 240, 280, 340, 360]
+    const stored = parseInt(storage.getItem('heroic_card_zoom') || '180')
+    if (steps.includes(stored)) return stored
+    return steps.reduce((prev, curr) => Math.abs(curr - stored) < Math.abs(prev - stored) ? curr : prev, 180)
   })
 
   useEffect(() => {
@@ -273,65 +277,158 @@ export default memo(function Library(): JSX.Element {
       const isInTopArea =
         !!active.closest('.Header') ||
         !!active.closest('.listing > div:first-child')
+      const backToTop = document.getElementById('backToTopBtn')
+      const goToBottom = document.getElementById('goToBottomBtn')
+      const zoomMinus = document.getElementById('zoom-minus-btn')
+      const zoomPlus = document.getElementById('zoom-plus-btn')
+
+      const isBackToTopVisible = backToTop && window.getComputedStyle(backToTop).visibility === 'visible'
+      const isGoToBottomVisible = goToBottom && window.getComputedStyle(goToBottom).visibility === 'visible'
+      const isZoomVisible = zoomMinus && window.getComputedStyle(zoomMinus).display !== 'none'
+
       const isFloatingBtn =
-        !!active.closest('#zoom-controls-container') ||
-        active.id === 'backToTopBtn'
+        active.id === 'zoom-minus-btn' ||
+        active.id === 'zoom-plus-btn' ||
+        active.id === 'backToTopBtn' ||
+        active.id === 'goToBottomBtn'
 
       if (isFloatingBtn) {
-        if (active.id === 'zoom-minus-btn' && e.key === 'ArrowRight') {
-          e.preventDefault()
-          e.stopPropagation()
-          document
-            .getElementById('zoom-plus-btn')
-            ?.focus({ preventScroll: true })
-          return
-        }
-        if (active.id === 'zoom-plus-btn' && e.key === 'ArrowLeft') {
-          e.preventDefault()
-          e.stopPropagation()
-          document
-            .getElementById('zoom-minus-btn')
-            ?.focus({ preventScroll: true })
-          return
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault()
-          e.stopPropagation()
-          const backToTop = document.getElementById('backToTopBtn')
-          if (
-            active.closest('#zoom-controls-container') &&
-            backToTop &&
-            window.getComputedStyle(backToTop).visibility === 'visible'
-          ) {
-            backToTop.focus({ preventScroll: true })
+        if (active.id === 'zoom-minus-btn') {
+          if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            e.stopPropagation()
+            zoomPlus?.focus({ preventScroll: true })
             return
           }
-          const cards = Array.from(
-            document.querySelectorAll('.gameCard, .gameListItem')
-          ).filter(
-            (el) => window.getComputedStyle(el).display !== 'none'
-          ) as HTMLElement[]
-          if (cards.length) cards[cards.length - 1].focus()
-          return
+          if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isGoToBottomVisible) {
+              goToBottom.focus({ preventScroll: true })
+            } else if (isBackToTopVisible) {
+              backToTop.focus({ preventScroll: true })
+            } else {
+              const cards = Array.from(
+                document.querySelectorAll('.gameCard, .gameListItem')
+              ).filter(
+                (el) => window.getComputedStyle(el).display !== 'none'
+              ) as HTMLElement[]
+              if (cards.length) cards[cards.length - 1].focus()
+            }
+            return
+          }
         }
-        if (active.id === 'backToTopBtn' && e.key === 'ArrowDown') {
-          e.preventDefault()
-          e.stopPropagation()
-          const z = document.getElementById('zoom-minus-btn')
-          if (z && window.getComputedStyle(z).display !== 'none')
-            z.focus({ preventScroll: true })
-          return
+
+        if (active.id === 'zoom-plus-btn') {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            e.stopPropagation()
+            zoomMinus?.focus({ preventScroll: true })
+            return
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isGoToBottomVisible) {
+              goToBottom.focus({ preventScroll: true })
+            } else if (isBackToTopVisible) {
+              backToTop.focus({ preventScroll: true })
+            }
+            return
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isGoToBottomVisible) {
+              goToBottom.focus({ preventScroll: true })
+            } else if (isBackToTopVisible) {
+              backToTop.focus({ preventScroll: true })
+            } else {
+              const cards = Array.from(
+                document.querySelectorAll('.gameCard, .gameListItem')
+              ).filter(
+                (el) => window.getComputedStyle(el).display !== 'none'
+              ) as HTMLElement[]
+              if (cards.length) cards[cards.length - 1].focus()
+            }
+            return
+          }
         }
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault()
-          e.stopPropagation()
-          const cards = Array.from(
-            document.querySelectorAll('.gameCard, .gameListItem')
-          ).filter(
-            (el) => window.getComputedStyle(el).display !== 'none'
-          ) as HTMLElement[]
-          if (cards.length) cards[cards.length - 1].focus()
-          return
+
+        if (active.id === 'goToBottomBtn') {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isBackToTopVisible) {
+              backToTop.focus({ preventScroll: true })
+            } else {
+              const cards = Array.from(
+                document.querySelectorAll('.gameCard, .gameListItem')
+              ).filter(
+                (el) => window.getComputedStyle(el).display !== 'none'
+              ) as HTMLElement[]
+              if (cards.length) cards[cards.length - 1].focus()
+            }
+            return
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isZoomVisible) {
+              zoomPlus?.focus({ preventScroll: true })
+            }
+            return
+          }
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isZoomVisible) {
+              zoomPlus?.focus({ preventScroll: true })
+            } else {
+              const cards = Array.from(
+                document.querySelectorAll('.gameCard, .gameListItem')
+              ).filter(
+                (el) => window.getComputedStyle(el).display !== 'none'
+              ) as HTMLElement[]
+              if (cards.length) cards[cards.length - 1].focus()
+            }
+            return
+          }
+        }
+
+        if (active.id === 'backToTopBtn') {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (isGoToBottomVisible) {
+              goToBottom.focus({ preventScroll: true })
+            } else if (isZoomVisible) {
+              zoomPlus?.focus({ preventScroll: true })
+            }
+            return
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            e.stopPropagation()
+            const cards = Array.from(
+              document.querySelectorAll('.gameCard, .gameListItem')
+            ).filter(
+              (el) => window.getComputedStyle(el).display !== 'none'
+            ) as HTMLElement[]
+            if (cards.length) cards[cards.length - 1].focus()
+            return
+          }
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            e.stopPropagation()
+            const cards = Array.from(
+              document.querySelectorAll('.gameCard, .gameListItem')
+            ).filter(
+              (el) => window.getComputedStyle(el).display !== 'none'
+            ) as HTMLElement[]
+            if (cards.length) cards[cards.length - 1].focus()
+            return
+          }
         }
       }
 
@@ -415,7 +512,8 @@ export default memo(function Library(): JSX.Element {
                     !el.closest('.gameCard') &&
                     !el.closest('.gameListItem') &&
                     !el.closest('#zoom-controls-container') &&
-                    el.id !== 'backToTopBtn'
+                    el.id !== 'backToTopBtn' &&
+                    el.id !== 'goToBottomBtn'
                 )
 
                 if (elementsBelow.length > 0) {
@@ -431,12 +529,18 @@ export default memo(function Library(): JSX.Element {
                 }
 
                 const btn = document.getElementById('backToTopBtn')
+                const bottomBtn = document.getElementById('goToBottomBtn')
                 const zoomBtn = document.getElementById('zoom-minus-btn')
                 if (
                   btn &&
                   window.getComputedStyle(btn).visibility === 'visible'
                 )
                   btn.focus({ preventScroll: true })
+                else if (
+                  bottomBtn &&
+                  window.getComputedStyle(bottomBtn).visibility === 'visible'
+                )
+                  bottomBtn.focus({ preventScroll: true })
                 else if (
                   zoomBtn &&
                   window.getComputedStyle(zoomBtn).display !== 'none'
@@ -484,7 +588,8 @@ export default memo(function Library(): JSX.Element {
             !isInsideMainArea ||
             el === active ||
             el.id.includes('zoom') ||
-            el.id === 'backToTopBtn'
+            el.id === 'backToTopBtn' ||
+            el.id === 'goToBottomBtn'
           )
             return
 
@@ -851,6 +956,7 @@ export default memo(function Library(): JSX.Element {
   }
 
   const backToTopElement = useRef<HTMLButtonElement | null>(null)
+  const goToBottomElement = useRef<HTMLButtonElement | null>(null)
 
   const [activeStoreFilter, setActiveStoreFilter] = useState<string | null>(
     () => localStorage.getItem('heroic_active_store_filter')
@@ -906,23 +1012,41 @@ export default memo(function Library(): JSX.Element {
 
   useEffect(() => {
     const btn = document.getElementById('backToTopBtn')
+    const bottomBtn = document.getElementById('goToBottomBtn')
     const scrollArea = document.getElementById('games-scroll-area')
 
     const scrollCallback = (e: Event) => {
       const target = e.target as HTMLDivElement
-      if (btn && target) {
-        btn.style.visibility = target.scrollTop > 450 ? 'visible' : 'hidden'
+      if (target) {
+        const isScrolledPast = target.scrollTop > 450
+        if (btn) {
+          btn.style.visibility = isScrolledPast ? 'visible' : 'hidden'
+        }
+        if (bottomBtn) {
+          const isScrollable = target.scrollHeight > target.clientHeight
+          const isNearBottom = target.scrollTop + target.clientHeight > target.scrollHeight - 450
+          bottomBtn.style.visibility = (isScrolledPast && isScrollable && !isNearBottom) ? 'visible' : 'hidden'
+        }
       }
     }
 
     if (scrollArea) {
       scrollArea.addEventListener('scroll', scrollCallback)
+      const isScrolledPast = scrollArea.scrollTop > 450
       if (btn) {
-        btn.style.visibility = scrollArea.scrollTop > 450 ? 'visible' : 'hidden'
+        btn.style.visibility = isScrolledPast ? 'visible' : 'hidden'
+      }
+      if (bottomBtn) {
+        const isScrollable = scrollArea.scrollHeight > scrollArea.clientHeight
+        const isNearBottom = scrollArea.scrollTop + scrollArea.clientHeight > scrollArea.scrollHeight - 450
+        bottomBtn.style.visibility = (isScrolledPast && isScrollable && !isNearBottom) ? 'visible' : 'hidden'
       }
     } else {
       if (btn) {
         btn.style.visibility = 'hidden'
+      }
+      if (bottomBtn) {
+        bottomBtn.style.visibility = 'hidden'
       }
     }
 
@@ -941,6 +1065,22 @@ export default memo(function Library(): JSX.Element {
         ) as HTMLElement
         if (firstCard) {
           firstCard.focus({ preventScroll: true })
+        }
+      }, 50)
+    }
+  }
+
+  const goToBottom = () => {
+    const scrollArea = document.getElementById('games-scroll-area')
+    if (scrollArea) {
+      scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' })
+      setTimeout(() => {
+        const cards = scrollArea.querySelectorAll(
+          '[data-sn-focusable="true"], .gameCard'
+        )
+        const lastCard = cards[cards.length - 1] as HTMLElement
+        if (lastCard) {
+          lastCard.focus({ preventScroll: true })
         }
       }, 50)
     }
@@ -1595,6 +1735,16 @@ export default memo(function Library(): JSX.Element {
       </div>
 
       <button
+        id="goToBottomBtn"
+        onClick={goToBottom}
+        ref={goToBottomElement}
+        tabIndex={0}
+        data-sn-focusable="true"
+      >
+        <ArrowDropDown id="goToBottomArrow" className="material-icons" />
+      </button>
+
+      <button
         id="backToTopBtn"
         onClick={backToTop}
         ref={backToTopElement}
@@ -1609,122 +1759,143 @@ export default memo(function Library(): JSX.Element {
           id="zoom-controls-container"
           style={{
             position: 'fixed',
-            bottom: '5px',
+            bottom: '3px',
             right: '50px',
-            background: 'rgba(30, 34, 40, 0.95)',
-            backdropFilter: 'blur(10px)',
-            padding: '5px 10px',
-            borderRadius: '10px',
+            height: '38px',
+            padding: '0 12px',
             zIndex: 9998,
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(0, 255, 255, 0.3)',
-            color: '#fff',
-            transition: 'all 0.3s ease'
+            gap: '10px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            userSelect: 'none'
           }}
         >
-          <span style={{ fontSize: '14px' }} title="Tamanho das Capas">
-            {' '}
-            🔍
-          </span>
-          <div
+          <button
+            id="zoom-minus-btn"
+            onClick={() => {
+              const steps = [160, 180, 200, 240, 280, 340, 360]
+              let idx = steps.indexOf(cardZoom)
+              if (idx === -1) {
+                const smallerSteps = steps.filter(s => s < cardZoom)
+                idx = smallerSteps.length > 0 ? steps.indexOf(smallerSteps[smallerSteps.length - 1]) : 0
+              } else {
+                idx = Math.max(0, idx - 1)
+              }
+              const newVal = steps[idx]
+              setCardZoom(newVal)
+              storage.setItem('heroic_card_zoom', newVal.toString())
+              setTimeout(
+                () => document.getElementById('zoom-minus-btn')?.focus(),
+                10
+              )
+            }}
+            tabIndex={0}
+            data-sn-focusable="true"
             style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.7)',
+              cursor: 'pointer',
+              width: '24px',
+              height: '24px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(0,0,0,0.3)',
-              padding: '3px',
-              borderRadius: '6px'
+              justifyContent: 'center',
+              borderRadius: '50%',
+              transition: 'all 0.2s ease',
+              padding: 0
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.1)'
+              e.currentTarget.style.color = '#00ffff'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
             }}
           >
-            <button
-              id="zoom-minus-btn"
-              onClick={() => {
-                const step = 20
-                const min = 160
-                const newVal = Math.max(min, cardZoom - step)
-                setCardZoom(newVal)
-                storage.setItem('heroic_card_zoom', newVal.toString())
-                setTimeout(
-                  () => document.getElementById('zoom-minus-btn')?.focus(),
-                  10
-                )
-              }}
-              tabIndex={0}
-              data-sn-focusable="true"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: '14px',
-                cursor: 'pointer',
-                width: '18px',
-                height: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '4px',
-                transition: 'background 0.2s'
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: '600',
+              minWidth: '42px',
+              textAlign: 'center',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontFamily: 'inherit'
+            }}
+          >
+            {cardZoom}px
+          </span>
+
+          <button
+            id="zoom-plus-btn"
+            onClick={() => {
+              const steps = [160, 180, 200, 240, 280, 340, 360]
+              let idx = steps.indexOf(cardZoom)
+              if (idx === -1) {
+                const largerSteps = steps.filter(s => s > cardZoom)
+                idx = largerSteps.length > 0 ? steps.indexOf(largerSteps[0]) : steps.length - 1
+              } else {
+                idx = Math.min(steps.length - 1, idx + 1)
               }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.background = 'transparent')
-              }
-            >
-              -
-            </button>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 'bold',
-                minWidth: '40px',
-                textAlign: 'center'
-              }}
-            >
-              {cardZoom}px
-            </span>
-            <button
-              id="zoom-plus-btn"
-              onClick={() => {
-                const step = 20
-                const max = 360
-                const newVal = Math.min(max, cardZoom + step)
-                setCardZoom(newVal)
-                storage.setItem('heroic_card_zoom', newVal.toString())
-                setTimeout(
-                  () => document.getElementById('zoom-plus-btn')?.focus(),
-                  10
-                )
-              }}
-              tabIndex={0}
-              data-sn-focusable="true"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: '14px',
-                cursor: 'pointer',
-                width: '18px',
-                height: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '4px',
-                transition: 'background 0.2s'
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.background = 'transparent')
-              }
-            >
-              +
-            </button>
+              const newVal = steps[idx]
+              setCardZoom(newVal)
+              storage.setItem('heroic_card_zoom', newVal.toString())
+              setTimeout(
+                () => document.getElementById('zoom-plus-btn')?.focus(),
+                10
+              )
+            }}
+            tabIndex={0}
+            data-sn-focusable="true"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.7)',
+              cursor: 'pointer',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              transition: 'all 0.2s ease',
+              padding: 0
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.1)'
+              e.currentTarget.style.color = '#00ffff'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+
+          <div
+            style={{
+              height: '14px',
+              width: '1px',
+              background: 'rgba(255, 255, 255, 0.15)'
+            }}
+          />
+
+          <div style={{ display: 'flex', alignItems: 'center', color: '#00ffff' }} title="Tamanho das Capas">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
           </div>
 
           <style>{`

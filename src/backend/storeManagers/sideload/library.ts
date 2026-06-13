@@ -2,10 +2,11 @@ import { ExecResult, GameInfo } from 'common/types'
 import { readdirSync } from 'graceful-fs'
 import { dirname, join } from 'path'
 import { libraryStore } from './electronStores'
-import { logWarning } from 'backend/logger'
+import { logWarning, logInfo, logError } from 'backend/logger'
 import { addShortcuts } from 'backend/shortcuts/shortcuts/shortcuts'
 import { sendFrontendMessage } from 'backend/ipc'
 import { isMac } from 'backend/constants/environment'
+import { getApiKey, fetchCoverFromSteamGridDB } from './steamgridHelper'
 
 export function addNewApp({
   app_name,
@@ -75,7 +76,36 @@ export function installState() {
 }
 
 export async function refresh() {
-  logWarning(`refresh not implemented on Sideload Library Manager`)
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    logInfo('[Sideload Library] Skip cover auto-update: SteamGridDB API key is missing.')
+    return null
+  }
+
+  const games = libraryStore.get('games', []) as GameInfo[]
+  let updatedAny = false
+
+  for (const game of games) {
+    const hasNoCover = !game.art_cover || game.art_cover.includes('heroic-icon.svg') || game.art_cover.includes('heroic_card.jpg')
+    const hasNoSquare = !game.art_square || game.art_square.includes('heroic-icon.svg') || game.art_square.includes('heroic_card.jpg')
+
+    if ((hasNoCover || hasNoSquare) && game.title) {
+      logInfo(`[Sideload Library] Searching SteamGridDB cover for: ${game.title}`)
+      const coverData = await fetchCoverFromSteamGridDB(apiKey, game.title)
+      if (coverData) {
+        game.art_cover = coverData.art_cover
+        game.art_square = coverData.art_square
+        updatedAny = true
+        logInfo(`[Sideload Library] Applied SteamGridDB cover for: ${game.title}`)
+      }
+    }
+  }
+
+  if (updatedAny) {
+    libraryStore.set('games', games)
+    sendFrontendMessage('refreshLibrary', 'sideload')
+  }
+
   return null
 }
 

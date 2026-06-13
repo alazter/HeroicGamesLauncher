@@ -50,21 +50,40 @@ void window.api
   .then(window.setCustomCSS)
   .catch(() => {})
 
+const rebrandPostProcessor = {
+  type: 'postProcessor' as const,
+  name: 'rebrand',
+  process: (value: string) => {
+    if (typeof value !== 'string') return value
+
+    let processed = value
+      .replace(/Heroic Games Launcher/g, 'Ghost Games Launcher')
+      .replace(/Heroic/g, 'Ghost')
+      .replace(/heroic/g, 'ghost')
+
+    // Restaurar links e referências importantes que não podem quebrar
+    processed = processed
+      .replace(/Ghost-Games-Launcher/g, 'Heroic-Games-Launcher')
+      .replace(/ghost-games-launcher/g, 'heroic-games-launcher')
+      .replace(/github\.com\/Ghost/gi, 'github.com/Heroic-Games-Launcher')
+
+    return processed
+  }
+}
+
 // --- O TRUQUE MÁGICO: Apelido para esconder o '.use' do Linter ---
 const i18n = i18next
 
 // Adicionado o 'void' para a Promise do i18n
 void i18n
-  // load translation using http -> see /public/locales
-  // learn more: https://github.com/i18next/i18next-http-backend
+  .use(rebrandPostProcessor)
   .use(Backend)
-  // detect user language
-  // learn more: https://github.com/i18next/i18next-browser-languageDetector
   .use(initReactI18next)
   .init({
     returnEmptyString: false,
     returnNull: false,
     fallbackLng: 'en',
+    postProcess: ['rebrand'],
     interpolation: {
       escapeValue: false
     },

@@ -137,12 +137,7 @@ function Root() {
         /* AJUSTES CIRÚRGICOS (17 E ÍCONE ATIVO)                     */
         /* ========================================================= */
 
-        /* A) O número 17 (Quantidade de jogos) */
-        .numberOfgames {
-          --input-background: rgba(255, 255, 255, 0.15) !important;
-          background: rgba(255, 255, 255, 0.15) !important;
-          background-color: rgba(255, 255, 255, 0.15) !important;
-        }
+
 
         /* B) Fundo do ícone ativo na barra lateral */
         #app aside .active,

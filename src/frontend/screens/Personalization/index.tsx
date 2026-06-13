@@ -72,20 +72,52 @@ export default function PersonalizationScreen() {
     return saved !== null ? Number(saved) : 0.08
   })
 
-  const [alphabetBtnOpacity, setAlphabetBtnOpacity] = useState<number>(() => {
+  const [alphabetBtnBgOpacity, setAlphabetBtnBgOpacity] = useState<number>(() => {
     const saved = localStorage.getItem('heroic_alphabet_btn_opacity')
     return saved !== null ? Number(saved) : 0.05
   })
 
-  const [alphabetColor, setAlphabetColor] = useState<string>(() => {
+  const [alphabetBtnBgColor, setAlphabetBtnBgColor] = useState<string>(() => {
     const saved = localStorage.getItem('heroic_alphabet_color')
     return saved !== null ? saved : '#ffffff'
   })
 
+  const [alphabetBtnBgColor2, setAlphabetBtnBgColor2] = useState<string>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_bg_color_2')
+    return saved !== null ? saved : '#00e5ff'
+  })
+
+  const [alphabetBtnGradientEnabled, setAlphabetBtnGradientEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_gradient_enabled')
+    return saved !== null ? (JSON.parse(saved) as boolean) : false
+  })
+
+  const [alphabetBtnBorderEnabled, setAlphabetBtnBorderEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_border_enabled')
+    return saved !== null ? (JSON.parse(saved) as boolean) : true
+  })
+
+  const [alphabetBtnHoverOpacity, setAlphabetBtnHoverOpacity] = useState<number>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_hover_opacity')
+    return saved !== null ? Number(saved) : 0.13
+  })
+
+  const [alphabetBtnActiveOpacity, setAlphabetBtnActiveOpacity] = useState<number>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_active_opacity')
+    return saved !== null ? Number(saved) : 0.85
+  })
+
+  const [alphabetBtnBorderRadius, setAlphabetBtnBorderRadius] = useState<number>(() => {
+    const saved = localStorage.getItem('heroic_alphabet_btn_border_radius')
+    return saved !== null ? Number(saved) : 18
+  })
+
+  const [activeAlphabetColorTab, setActiveAlphabetColorTab] = useState<'color1' | 'color2'>('color1')
+
   // ==============================================================
   // ESTADOS DE CUSTOMIZAÇÃO DAS LOJAS
   // ==============================================================
-  const [rightPanelMode, setRightPanelMode] = useState<'default' | 'storeButtons'>('default')
+  const [rightPanelMode, setRightPanelMode] = useState<'default' | 'storeButtons' | 'alphabet'>('default')
 
   const [storeBtnBgColor, setStoreBtnBgColor] = useState<string>(() => {
     const saved = localStorage.getItem('heroic_store_btn_bg_color')
@@ -376,8 +408,38 @@ export default function PersonalizationScreen() {
   }
 
   const handleAlphabetBtnOpacityChange = (val: number) => {
-    setAlphabetBtnOpacity(val)
+    setAlphabetBtnBgOpacity(val)
     localStorage.setItem('heroic_alphabet_btn_opacity', val.toString())
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleAlphabetHoverOpacityChange = (val: number) => {
+    setAlphabetBtnHoverOpacity(val)
+    localStorage.setItem('heroic_alphabet_btn_hover_opacity', val.toString())
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleAlphabetActiveOpacityChange = (val: number) => {
+    setAlphabetBtnActiveOpacity(val)
+    localStorage.setItem('heroic_alphabet_btn_active_opacity', val.toString())
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleAlphabetBorderRadiusChange = (val: number) => {
+    setAlphabetBtnBorderRadius(val)
+    localStorage.setItem('heroic_alphabet_btn_border_radius', val.toString())
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleAlphabetGradientToggle = (val: boolean) => {
+    setAlphabetBtnGradientEnabled(val)
+    localStorage.setItem('heroic_alphabet_btn_gradient_enabled', JSON.stringify(val))
+    window.dispatchEvent(new Event('heroicSettingsChanged'))
+  }
+
+  const handleAlphabetBorderToggle = (val: boolean) => {
+    setAlphabetBtnBorderEnabled(val)
+    localStorage.setItem('heroic_alphabet_btn_border_enabled', JSON.stringify(val))
     window.dispatchEvent(new Event('heroicSettingsChanged'))
   }
 
@@ -435,10 +497,18 @@ export default function PersonalizationScreen() {
       l: Math.round(l * 100)
     }
   }
-  const handleHexChange = (val: string) => {
-    setAlphabetColor(val)
+  const handleAlphabetHexChange = (val: string) => {
+    setAlphabetBtnBgColor(val)
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
       localStorage.setItem('heroic_alphabet_color', val)
+      window.dispatchEvent(new Event('heroicSettingsChanged'))
+    }
+  }
+
+  const handleAlphabetHexChange2 = (val: string) => {
+    setAlphabetBtnBgColor2(val)
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+      localStorage.setItem('heroic_alphabet_btn_bg_color_2', val)
       window.dispatchEvent(new Event('heroicSettingsChanged'))
     }
   }
@@ -614,8 +684,15 @@ export default function PersonalizationScreen() {
   }
   // ==============================================================
 
-  const rgbValues = hexToRgb(alphabetColor)
-  const hslValues = rgbToHsl(rgbValues.r, rgbValues.g, rgbValues.b)
+  const alphabetRgb = hexToRgb(alphabetBtnBgColor)
+  const alphabetHsl = rgbToHsl(alphabetRgb.r, alphabetRgb.g, alphabetRgb.b)
+  const alphabetRgb2 = hexToRgb(alphabetBtnBgColor2)
+  const alphabetHsl2 = rgbToHsl(alphabetRgb2.r, alphabetRgb2.g, alphabetRgb2.b)
+
+  const isEditingAlphabetColor2 = alphabetBtnGradientEnabled && activeAlphabetColorTab === 'color2'
+  const currentEditingAlphabetColor = isEditingAlphabetColor2 ? alphabetBtnBgColor2 : alphabetBtnBgColor
+  const currentEditingAlphabetHsl = isEditingAlphabetColor2 ? alphabetHsl2 : alphabetHsl
+  const currentEditingAlphabetHandler = isEditingAlphabetColor2 ? handleAlphabetHexChange2 : handleAlphabetHexChange
 
   const storeRgb = hexToRgb(storeBtnBgColor)
   const storeHsl = rgbToHsl(storeRgb.r, storeRgb.g, storeRgb.b)
@@ -627,10 +704,10 @@ export default function PersonalizationScreen() {
   const currentEditingHsl = isEditingColor2 ? storeHsl2 : storeHsl
   const currentEditingHandler = isEditingColor2 ? handleStoreHexChange2 : handleStoreHexChange
   
-  const { r, g, b } = rgbValues
+  const { r, g, b } = alphabetRgb
   const luminance = 0.299 * r + 0.587 * g + 0.114 * b
   const isLightColor = luminance > 140
-  const useDarkText = isLightColor && alphabetBtnOpacity > 0.4
+  const useDarkText = isLightColor && alphabetBtnBgOpacity > 0.4
 
   const btnTextColor = useDarkText ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)'
   const btnDisabledTextColor = useDarkText ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)'
@@ -1399,19 +1476,34 @@ export default function PersonalizationScreen() {
           background-color: rgba(var(--base-r), var(--base-g), var(--base-b), var(--bg-op));
           border-radius: 20px;
           border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), calc(var(--bg-op) * 0.8));
+          outline: 1.5px dashed transparent;
+          outline-offset: 2px;
           max-width: 100%;
           overflow-x: auto;
           scrollbar-width: none;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: var(--alphabet-backdrop-filter, blur(12px));
+          -webkit-backdrop-filter: var(--alphabet-backdrop-filter, blur(12px));
+          transition: border-color 0.2s, background-color 0.2s, outline-color 0.2s;
+          cursor: pointer;
+        }
+        .preview-alphabet-container:hover {
+          outline-color: rgba(230, 126, 34, 0.4);
+          background-color: rgba(255, 255, 255, 0.02);
+        }
+        .preview-alphabet-container--selected {
+          outline-color: rgba(230, 126, 34, 0.8) !important;
+          background-color: rgba(230, 126, 34, 0.04) !important;
         }
         .preview-alphabet-container::-webkit-scrollbar {
           display: none;
         }
 
         .preview-alphabet-btn {
-          background-color: rgba(var(--base-r), var(--base-g), var(--base-b), var(--btn-op));
-          border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), var(--btn-op));
+          box-sizing: border-box !important;
+          background: var(--alphabet-btn-bg, rgba(255, 255, 255, 0.03)) padding-box, transparent border-box !important;
+          border: var(--alphabet-btn-border-width, 1px) solid var(--alphabet-btn-border-color, rgba(255, 255, 255, 0.08)) !important;
+          background-clip: padding-box, border-box !important;
+          background-origin: padding-box, border-box !important;
           color: var(--txt-color);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 14px;
@@ -1421,22 +1513,48 @@ export default function PersonalizationScreen() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 50%;
+          border-radius: var(--alphabet-btn-border-radius, 50%);
           flex-shrink: 0;
           user-select: none;
           outline: none;
-          transition: all 0.2s ease-in-out;
+          transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+          backdrop-filter: var(--alphabet-btn-backdrop-filter, blur(12px));
+          -webkit-backdrop-filter: var(--alphabet-btn-backdrop-filter, blur(12px));
+          position: relative !important;
+          overflow: hidden !important;
+        }
+        
+        .preview-alphabet-btn:hover {
+          transform: scale(1.08) !important;
+        }
+
+        .preview-alphabet-btn::before {
+          content: "" !important;
+          position: absolute !important;
+          inset: 0 !important;
+          background: var(--alphabet-btn-hover-bg, rgba(255, 255, 255, 0.06)) padding-box, transparent border-box !important;
+          background-clip: padding-box, border-box !important;
+          background-origin: padding-box, border-box !important;
+          opacity: 0 !important;
+          transition: opacity 0.2s ease-in-out !important;
+          z-index: 1 !important;
+          pointer-events: none !important;
+        }
+
+        .preview-alphabet-btn:hover::before {
+          opacity: 1 !important;
         }
 
         .preview-alphabet-btn--active {
-          background: linear-gradient(135deg, var(--store-btn-active-bg-start, rgba(20, 24, 30, 0.6)) 0%, var(--store-btn-active-bg-end, rgba(230, 126, 34, 0.06)) 100%) padding-box, linear-gradient(135deg, var(--store-btn-active-border-start, rgba(255, 255, 255, 0.2)) 0%, var(--store-btn-active-border-end, rgba(230, 126, 34, 0.95)) 100%) border-box !important;
+          background: linear-gradient(135deg, var(--alphabet-btn-active-bg-start, rgba(20, 24, 30, 0.6)) 0%, var(--alphabet-btn-active-bg-end, rgba(230, 126, 34, 0.06)) 100%) padding-box, linear-gradient(135deg, var(--alphabet-btn-active-border-start, rgba(255, 255, 255, 0.2)) 0%, var(--alphabet-btn-active-border-end, rgba(230, 126, 34, 0.95)) 100%) border-box !important;
           border: 2px solid transparent !important;
           background-clip: padding-box, border-box !important;
           background-origin: padding-box, border-box !important;
           color: #ffffff !important;
           font-weight: 700;
-          box-shadow: 0 3px 10px 0 var(--store-btn-shadow-color, rgba(230, 126, 34, 0.25)), inset 0 0 4px rgba(255, 255, 255, 0.1) !important;
-          transform: scale(1.1);
+          box-shadow: 0 3px 10px 0 var(--alphabet-btn-shadow-color, rgba(230, 126, 34, 0.25)), inset 0 0 4px rgba(255, 255, 255, 0.1) !important;
+          transform: scale(1.1) !important;
+          z-index: 2;
         }
 
         .preview-alphabet-btn--disabled {
@@ -2037,25 +2155,45 @@ export default function PersonalizationScreen() {
                   }}
                 >
                   <div
-                    className="preview-alphabet-container"
+                    className={`preview-alphabet-container ${rightPanelMode === 'alphabet' ? 'preview-alphabet-container--selected' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRightPanelMode('alphabet');
+                    }}
                     style={{
                       '--base-r': r,
                       '--base-g': g,
                       '--base-b': b,
                       '--bg-op': alphabetBgOpacity,
-                      '--btn-op': alphabetBtnOpacity,
+                      '--alphabet-backdrop-filter': alphabetBgOpacity === 0 ? 'none' : 'blur(12px)',
                       '--txt-color': btnTextColor,
                       '--disabled-txt-color': btnDisabledTextColor,
                       '--active-bg': activeBtnBg,
-                      '--store-btn-active-bg-start': `rgba(${storeRgb.r}, ${storeRgb.g}, ${storeRgb.b}, ${storeBtnActiveOpacity})`,
-                      '--store-btn-active-bg-end': storeBtnGradientEnabled
-                        ? `rgba(${storeRgb2.r}, ${storeRgb2.g}, ${storeRgb2.b}, ${storeBtnActiveOpacity})`
-                        : `rgba(${storeRgb.r}, ${storeRgb.g}, ${storeRgb.b}, ${storeBtnActiveOpacity})`,
-                      '--store-btn-active-border-start': `rgba(${storeRgb.r}, ${storeRgb.g}, ${storeRgb.b}, ${Math.min(0.85, storeBtnActiveOpacity * 2)})`,
-                      '--store-btn-active-border-end': storeBtnGradientEnabled
-                        ? `rgba(${storeRgb2.r}, ${storeRgb2.g}, ${storeRgb2.b}, ${Math.min(0.85, storeBtnActiveOpacity * 2)})`
-                        : `rgba(${storeRgb.r}, ${storeRgb.g}, ${storeRgb.b}, ${Math.min(0.85, storeBtnActiveOpacity * 2)})`,
-                      '--store-btn-shadow-color': `rgba(${storeRgb.r}, ${storeRgb.g}, ${storeRgb.b}, 0.2)`,
+                      '--alphabet-btn-border-radius': `${alphabetBtnBorderRadius}px`,
+                      '--alphabet-btn-border-width': alphabetBtnBorderEnabled ? '1px' : '0px',
+                      '--alphabet-btn-bg': alphabetBtnGradientEnabled
+                        ? `linear-gradient(135deg, rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnBgOpacity}) 0%, rgba(${alphabetRgb2.r}, ${alphabetRgb2.g}, ${alphabetRgb2.b}, ${alphabetBtnBgOpacity}) 100%)`
+                        : `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnBgOpacity})`,
+                      '--alphabet-btn-border-color': alphabetBtnBorderEnabled
+                        ? `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${Math.min(1, alphabetBtnBgOpacity * 2.5)})`
+                        : 'transparent',
+                      '--alphabet-btn-hover-bg': alphabetBtnGradientEnabled
+                        ? `linear-gradient(135deg, rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnHoverOpacity}) 0%, rgba(${alphabetRgb2.r}, ${alphabetRgb2.g}, ${alphabetRgb2.b}, ${alphabetBtnHoverOpacity}) 100%)`
+                        : `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnHoverOpacity})`,
+                      '--alphabet-btn-hover-border-color': alphabetBtnBorderEnabled
+                        ? `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${Math.min(1, alphabetBtnHoverOpacity * 2.5)})`
+                        : 'transparent',
+                      '--alphabet-btn-active-bg-start': `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnActiveOpacity})`,
+                      '--alphabet-btn-active-bg-end': alphabetBtnGradientEnabled
+                        ? `rgba(${alphabetRgb2.r}, ${alphabetRgb2.g}, ${alphabetRgb2.b}, ${alphabetBtnActiveOpacity})`
+                        : `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${alphabetBtnActiveOpacity})`,
+                      '--alphabet-btn-active-border-start': `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${Math.min(0.85, alphabetBtnActiveOpacity * 2)})`,
+                      '--alphabet-btn-active-border-end': alphabetBtnGradientEnabled
+                        ? `rgba(${alphabetRgb2.r}, ${alphabetRgb2.g}, ${alphabetRgb2.b}, ${Math.min(0.85, alphabetBtnActiveOpacity * 2)})`
+                        : `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, ${Math.min(0.85, alphabetBtnActiveOpacity * 2)})`,
+                      '--alphabet-btn-shadow-color': `rgba(${alphabetRgb.r}, ${alphabetRgb.g}, ${alphabetRgb.b}, 0.2)`,
+                      '--alphabet-btn-backdrop-filter': alphabetBtnBgOpacity === 0 ? 'none' : 'blur(12px)',
+                      '--alphabet-btn-hover-backdrop-filter': alphabetBtnHoverOpacity === 0 ? 'none' : 'blur(12px)',
                       width: alphabetAlignment === 'fill' ? '100%' : 'auto',
                       justifyContent: alphabetAlignment === 'fill' ? 'space-between' : 'center'
                     } as React.CSSProperties}
@@ -2071,7 +2209,7 @@ export default function PersonalizationScreen() {
                           onClick={() => setActivePreviewLetter(char)}
                           style={{ cursor: 'pointer' }}
                         >
-                          {char}
+                          <span style={{ position: 'relative', zIndex: 2 }}>{char}</span>
                         </div>
                       )
                     })}
@@ -2301,8 +2439,6 @@ export default function PersonalizationScreen() {
                       style={styles.checkbox}
                     />
                   </label>
-
-
                 </div>
               </div>
 
@@ -2325,7 +2461,7 @@ export default function PersonalizationScreen() {
                     Filtro de Alfabeto (A-Z)
                   </span>
                   <span style={styles.toggleSub}>
-                    Personalize o alinhamento e transparência das letras
+                    Personalize o alinhamento e opacidade do painel de letras
                   </span>
                 </div>
 
@@ -2384,10 +2520,6 @@ export default function PersonalizationScreen() {
 
                 {/* Sub-seção 2: Transparência */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#8a9bb0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Transparência do Fundo
-                  </span>
-
                   {/* Slider 1: Fundo do Painel */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
@@ -2413,141 +2545,40 @@ export default function PersonalizationScreen() {
                       />
                     </div>
                   </div>
-
-                  {/* Slider 2: Fundo das Letras */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ color: '#fff', fontSize: '12px' }}>Opacidade do Fundo das Letras</span>
-                      <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{Math.round(alphabetBtnOpacity * 100)}%</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', height: '20px', paddingTop: '10px', paddingBottom: '10px' }}>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={alphabetBtnOpacity}
-                        onChange={(e) => handleAlphabetBtnOpacityChange(Number(e.target.value))}
-                        style={{
-                          width: '100%',
-                          accentColor: '#4CAF50',
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          height: '6px',
-                          borderRadius: '3px',
-                          cursor: 'pointer'
-                        }}
-                      />
-                    </div>
-                  </div>
                 </div>
 
-                {/*                {/* Sub-seção 3: Alterar Cores */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#8a9bb0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Alterar cores do filtro
-                  </span>
-
-                  {/* 2D SV Box */}
-                  <SVBox hexColor={alphabetColor} onChange={handleHexChange} />
-
-                  {/* Hue Slider */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type="range"
-                        min="0"
-                        max="360"
-                        value={hslValues.h}
-                        onChange={(e) => {
-                          const hVal = Number(e.target.value)
-                          const rgbValues = hexToRgb(alphabetColor)
-                          const hsvValues = rgbToHsv(rgbValues.r, rgbValues.g, rgbValues.b)
-                          const newRgb = hsvToRgb(hVal, hsvValues.s, hsvValues.v)
-                          const hex = rgbToHex(newRgb.r, newRgb.g, newRgb.b)
-                          setAlphabetColor(hex)
-                          localStorage.setItem('heroic_alphabet_color', hex)
-                          window.dispatchEvent(new Event('heroicSettingsChanged'))
-                        }}
-                        className="color-picker-range hue-picker-range"
-                        style={{
-                          '--thumb-color': alphabetColor,
-                          '--thumb-border-color': alphabetColor
-                        } as React.CSSProperties}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Hex Input and Color Preview */}
-                  <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '6px',
-                        padding: '8px 12px',
-                        gap: '10px',
-                        width: '100%',
-                        boxSizing: 'border-box'
-                      }}
-                    >
-                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', fontFamily: 'monospace' }}>#</span>
-                      <input
-                        type="text"
-                        value={alphabetColor.replace('#', '')}
-                        onChange={(e) => handleHexChange('#' + e.target.value)}
-                        placeholder="ffffff"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#fff',
-                          fontSize: '14px',
-                          outline: 'none',
-                          width: '100%',
-                          fontFamily: 'monospace'
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '4px',
-                          backgroundColor: alphabetColor,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          flexShrink: 0
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Opacidade do Fundo (Alpha) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ color: '#fff' }}>Opacidade do Fundo (Alpha)</span>
-                      <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{Math.round(alphabetBgOpacity * 100)}%</span>
-                    </div>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={alphabetBgOpacity}
-                        onChange={(e) => handleAlphabetBgOpacityChange(Number(e.target.value))}
-                        className="color-picker-range alpha-picker-range"
-                        style={{
-                          '--alpha-track-bg': `linear-gradient(to right, rgba(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b}, 0), rgb(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b})), repeating-conic-gradient(#555 0% 25%, #333 0% 50%) 50% / 10px 10px`,
-                          '--thumb-color': `rgba(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b}, ${alphabetBgOpacity})`,
-                          '--thumb-border-color': alphabetColor
-                        } as React.CSSProperties}
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Botão de Atalho para Customização dos Botões */}
+                <button
+                  onClick={() => setRightPanelMode('alphabet')}
+                  style={{
+                    background: '#00e5ff',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '10px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    marginTop: '8px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#00b3cc'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#00e5ff'
+                  }}
+                >
+                  ⚙️ Personalizar Botões do Alfabeto
+                </button>
               </div>
             </>
-          ) : (
+          ) : rightPanelMode === 'storeButtons' ? (
             <>
               {/* SEÇÃO 1: PERSONALIZAÇÃO DAS LOJAS */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -2868,6 +2899,341 @@ export default function PersonalizationScreen() {
                         step="0.01"
                         value={storeBtnActiveOpacity}
                         onChange={(e) => handleStoreActiveOpacityChange(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          accentColor: '#4CAF50',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          height: '6px',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* SEÇÃO 2: PERSONALIZAÇÃO DO ALFABETO */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <span style={styles.sectionTitle}>PERSONALIZAÇÃO DO ALFABETO</span>
+                <button
+                  onClick={() => setRightPanelMode('default')}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                  }}
+                >
+                  ← Voltar
+                </button>
+              </div>
+
+              {/* Controles do Alfabeto */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}
+              >
+                <div style={styles.toggleTextGroup}>
+                  <span style={styles.toggleTitle}>
+                    Estilo dos Botões do Alfabeto
+                  </span>
+                  <span style={styles.toggleSub}>
+                    Personalize a cor, opacidade e o arredondamento das bordas
+                  </span>
+                </div>
+
+                {/* Sub-seção 1: Arredondamento */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ color: '#fff' }}>Arredondamento das Bordas</span>
+                    <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{alphabetBtnBorderRadius}px</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', height: '20px', paddingTop: '10px', paddingBottom: '10px' }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="18"
+                      step="1"
+                      value={alphabetBtnBorderRadius}
+                      onChange={(e) => handleAlphabetBorderRadiusChange(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        accentColor: '#4CAF50',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        height: '6px',
+                        borderRadius: '3px',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Divisor Sutil */}
+                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)' }} />
+
+                {/* Sub-seção 3: Cores */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#8a9bb0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {alphabetBtnGradientEnabled ? 'Configuração de Cores' : 'Alterar cor de fundo'}
+                      </span>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <span style={{ fontSize: '11px', color: '#8a9bb0' }}>Degradê</span>
+                        <label className="premium-switch" style={{ cursor: 'pointer', margin: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={alphabetBtnGradientEnabled}
+                            onChange={(e) => handleAlphabetGradientToggle(e.target.checked)}
+                          />
+                          <span className="premium-slider"></span>
+                        </label>
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '11px', color: '#8a9bb0' }}>Borda do Botão</span>
+                      <label className="premium-switch" style={{ cursor: 'pointer', margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={alphabetBtnBorderEnabled}
+                          onChange={(e) => handleAlphabetBorderToggle(e.target.checked)}
+                        />
+                        <span className="premium-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Tabs de seleção de cores em caso de degrade ativo */}
+                  {alphabetBtnGradientEnabled && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderRadius: '6px',
+                        padding: '3px',
+                        gap: '4px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)'
+                      }}
+                    >
+                      <button
+                        onClick={() => setActiveAlphabetColorTab('color1')}
+                        style={{
+                          flex: 1,
+                          height: '28px',
+                          background: activeAlphabetColorTab === 'color1' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                          color: '#fff',
+                          border: activeAlphabetColorTab === 'color1' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          outline: 'none'
+                        }}
+                      >
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: alphabetBtnBgColor, border: '1px solid rgba(255,255,255,0.3)' }} />
+                        Cor Inicial
+                      </button>
+                      <button
+                        onClick={() => setActiveAlphabetColorTab('color2')}
+                        style={{
+                          flex: 1,
+                          height: '28px',
+                          background: activeAlphabetColorTab === 'color2' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                          color: '#fff',
+                          border: activeAlphabetColorTab === 'color2' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          outline: 'none'
+                        }}
+                      >
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: alphabetBtnBgColor2, border: '1px solid rgba(255,255,255,0.3)' }} />
+                        Cor Final
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 2D SV Box */}
+                  <SVBox hexColor={currentEditingAlphabetColor} onChange={currentEditingAlphabetHandler} />
+
+                  {/* Hue Slider */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="360"
+                        value={currentEditingAlphabetHsl.h}
+                        onChange={(e) => {
+                          const hVal = Number(e.target.value)
+                          const rgbVal = hexToRgb(currentEditingAlphabetColor)
+                          const hsvVal = rgbToHsv(rgbVal.r, rgbVal.g, rgbVal.b)
+                          const newRgb = hsvToRgb(hVal, hsvVal.s, hsvVal.v)
+                          const hex = rgbToHex(newRgb.r, newRgb.g, newRgb.b)
+                          currentEditingAlphabetHandler(hex)
+                        }}
+                        className="color-picker-range hue-picker-range"
+                        style={{
+                          '--thumb-color': currentEditingAlphabetColor,
+                          '--thumb-border-color': currentEditingAlphabetColor
+                        } as React.CSSProperties}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hex Input and Color Preview */}
+                  <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        gap: '10px',
+                        width: '100%',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', fontFamily: 'monospace' }}>#</span>
+                      <input
+                        type="text"
+                        value={currentEditingAlphabetColor.replace('#', '')}
+                        onChange={(e) => currentEditingAlphabetHandler('#' + e.target.value)}
+                        placeholder="ffffff"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '14px',
+                          outline: 'none',
+                          width: '100%',
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '4px',
+                          backgroundColor: currentEditingAlphabetColor,
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          flexShrink: 0
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divisor Sutil */}
+                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)' }} />
+
+                {/* Sub-seção 2: Transparência */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Slider 1: Opacidade do Fundo */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ color: '#fff' }}>Opacidade do Fundo (Alpha)</span>
+                      <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{Math.round(alphabetBtnBgOpacity * 100)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', height: '20px', paddingTop: '10px', paddingBottom: '10px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={alphabetBtnBgOpacity}
+                        onChange={(e) => handleAlphabetBtnOpacityChange(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          accentColor: '#4CAF50',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          height: '6px',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Slider 2: Opacidade no Hover */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ color: '#fff' }}>Opacidade no Hover</span>
+                      <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{Math.round(alphabetBtnHoverOpacity * 100)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', height: '20px', paddingTop: '10px', paddingBottom: '10px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={alphabetBtnHoverOpacity}
+                        onChange={(e) => handleAlphabetHoverOpacityChange(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          accentColor: '#4CAF50',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          height: '6px',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Slider 3: Opacidade Selecionada */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ color: '#fff' }}>Opacidade Selecionada (Alpha)</span>
+                      <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{Math.round(alphabetBtnActiveOpacity * 100)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', height: '20px', paddingTop: '10px', paddingBottom: '10px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={alphabetBtnActiveOpacity}
+                        onChange={(e) => handleAlphabetActiveOpacityChange(Number(e.target.value))}
                         style={{
                           width: '100%',
                           accentColor: '#4CAF50',

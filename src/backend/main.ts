@@ -122,7 +122,8 @@ import {
   undoImport,
   addGameToBlacklist,
   clearBlacklist,
-  getBlacklist
+  getBlacklist,
+  removeGameFromBlacklist
 } from './storeManagers/sideload/scanner'
 import {
   setGameOverrides,
@@ -369,7 +370,7 @@ if (!gotTheLock) {
 
     // try to fix notification app name on windows
     if (isWindows) {
-      app.setAppUserModelId('Heroic Games Launcher')
+      app.setAppUserModelId('Ghost Games Launcher')
     }
 
     runOnceWhenOnline(async () => {
@@ -1380,6 +1381,7 @@ addHandler('undoImport', (e, args) => undoImport(args))
 addHandler('addGameToBlacklist', (e, args) => addGameToBlacklist(args))
 addHandler('clearBlacklist', () => clearBlacklist())
 addHandler('getBlacklist', () => getBlacklist())
+addHandler('removeGameFromBlacklist', (e, executable: string) => removeGameFromBlacklist(executable))
 addHandler('exportScanLog', async (e, text: string) => {
   const mainWindow = getMainWindow()
   if (!mainWindow) return false

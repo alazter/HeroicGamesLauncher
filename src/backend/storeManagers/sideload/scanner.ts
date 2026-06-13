@@ -5,28 +5,17 @@ import { libraryStore } from './electronStores'
 import { addNewApp } from './library'
 import { GlobalConfig } from 'backend/config'
 import { GameConfig } from 'backend/game_config'
-import * as SteamGridDB from 'backend/steamgrid/utils'
-import { decryptApiKey, isEncryptedValue } from 'backend/steamgrid/secureKey'
 import { logInfo, logError } from 'backend/logger'
 import short from 'short-uuid'
 import { GameCandidate } from 'common/types'
 import { uninstall } from './games'
+import { sendFrontendMessage } from 'backend/ipc'
+import { getApiKey, fetchCoverFromSteamGridDB } from './steamgridHelper'
 
 interface RegistryEntry {
   DisplayName?: string
   InstallLocation?: string
   DisplayIcon?: string
-}
-
-function getApiKey(): string {
-  const stored = GlobalConfig.get().getSettings().steamGridDbApiKey || ''
-  if (!stored) return ''
-  if (!isEncryptedValue(stored)) return stored
-  try {
-    return decryptApiKey(stored)
-  } catch {
-    return ''
-  }
 }
 
 function runPowerShell(query: string): Promise<string> {
@@ -41,6 +30,57 @@ function runPowerShell(query: string): Promise<string> {
       }
     })
   })
+}
+
+function normalizePathForComparison(p: string): string {
+  if (!p) return ''
+  return p.replace(/\\/g, '/').toLowerCase().trim()
+}
+
+function normalizeTitleForComparison(t: string): string {
+  if (!t) return ''
+  return t
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[®™©]/g, '') // Remove símbolos especiais
+    .replace(/[^a-z0-9]/gi, '') // Mantém apenas letras e números
+    .toLowerCase()
+    .trim()
+}
+
+function isDuplicateGame(
+  game: { title?: string; install?: { executable?: string } },
+  scannedTitle: string,
+  scannedExecutableOrFolder: string
+): boolean {
+  const normTitle1 = normalizeTitleForComparison(game.title || '')
+  const normTitle2 = normalizeTitleForComparison(scannedTitle)
+
+  // 1. Se os títulos normalizados alfanuméricos forem idênticos
+  if (normTitle1 === normTitle2 && normTitle1 !== '') {
+    return true
+  }
+
+  // 2. Se a pasta pai do executável ou a pasta de instalação for idêntica (normalizada)
+  const exe1 = game.install?.executable
+  if (exe1 && scannedExecutableOrFolder) {
+    const dir1 = normalizePathForComparison(dirname(exe1))
+    
+    // Se a entrada escaneada for uma pasta (como InstallLocation/folder)
+    if (existsSync(scannedExecutableOrFolder) && statSync(scannedExecutableOrFolder).isDirectory()) {
+      if (dir1 === normalizePathForComparison(scannedExecutableOrFolder)) {
+        return true
+      }
+    } else {
+      // Se for um caminho de arquivo executável completo
+      const dirOfScannedExe = normalizePathForComparison(dirname(scannedExecutableOrFolder))
+      if (dir1 === dirOfScannedExe) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 function findExecutables(dir: string, depth = 0): string[] {
@@ -134,10 +174,24 @@ export async function scanInstalledGames(): Promise<{ count: number; games: stri
     if (NON_GAME_KEYWORDS.some(k => titleLower.includes(k))) continue
 
     // Check if already in the library
-    const isAlreadySideloaded = alreadySideloaded.some(
-      g => g.title?.toLowerCase() === titleLower || g.install?.executable?.toLowerCase().includes(folder.toLowerCase())
-    )
-    if (isAlreadySideloaded) continue
+    const existingGame = alreadySideloaded.find(g => isDuplicateGame(g, title, folder))
+    if (existingGame) {
+      if ((!existingGame.art_cover || existingGame.art_cover.includes('heroic-icon.svg') || existingGame.art_cover.includes('heroic_card.jpg')) && apiKey) {
+        try {
+          const coverData = await fetchCoverFromSteamGridDB(apiKey, title)
+          if (coverData) {
+            existingGame.art_square = coverData.art_square
+            existingGame.art_cover = coverData.art_cover
+            libraryStore.set('games', alreadySideloaded)
+            sendFrontendMessage('refreshLibrary', 'sideload')
+            logInfo(`Automatically updated missing cover for existing game: ${title}`)
+          }
+        } catch (err) {
+          logError([`Failed fetching missing SteamGridDB cover for existing game ${title}:`, err])
+        }
+      }
+      continue
+    }
 
     // Try to find the game executable
     let executablePath = ''
@@ -200,17 +254,10 @@ export async function scanInstalledGames(): Promise<{ count: number; games: stri
 
     if (apiKey) {
       try {
-        const searchResults = await SteamGridDB.searchGame(apiKey, title)
-        if (searchResults && searchResults.length > 0) {
-          const gameId = searchResults[0].id
-          const grids = await SteamGridDB.getGrids(apiKey, {
-            gameId,
-            dimensions: ['600x900', '300x450']
-          })
-          if (grids && grids.length > 0) {
-            art_square = grids[0].url
-            art_cover = grids[0].url
-          }
+        const coverData = await fetchCoverFromSteamGridDB(apiKey, title)
+        if (coverData) {
+          art_square = coverData.art_square
+          art_cover = coverData.art_cover
         }
       } catch (err) {
         logError([`Failed fetching SteamGridDB cover for ${title}:`, err])
@@ -356,14 +403,28 @@ export async function discoverInstalledGames(): Promise<GameCandidate[]> {
     if (!executablePath) continue
 
     // Check if already in the library
-    const isAlreadySideloaded = alreadySideloaded.some(
-      g => g.title?.toLowerCase() === titleLower || g.install?.executable?.toLowerCase() === executablePath.toLowerCase()
-    )
-    if (isAlreadySideloaded) continue
+    const existingGame = alreadySideloaded.find(g => isDuplicateGame(g, title, executablePath))
+    if (existingGame) {
+      if ((!existingGame.art_cover || existingGame.art_cover.includes('heroic-icon.svg') || existingGame.art_cover.includes('heroic_card.jpg')) && apiKey) {
+        try {
+          const coverData = await fetchCoverFromSteamGridDB(apiKey, title)
+          if (coverData) {
+            existingGame.art_square = coverData.art_square
+            existingGame.art_cover = coverData.art_cover
+            libraryStore.set('games', alreadySideloaded)
+            sendFrontendMessage('refreshLibrary', 'sideload')
+            logInfo(`Automatically updated missing cover for existing game: ${title}`)
+          }
+        } catch (err) {
+          logError([`Failed fetching missing SteamGridDB cover for existing game ${title}:`, err])
+        }
+      }
+      continue
+    }
 
     // Check if in blacklist
     const isBlacklisted = blacklist.some(
-      b => b.title?.toLowerCase() === titleLower || b.executable?.toLowerCase() === executablePath.toLowerCase()
+      b => isDuplicateGame({ title: b.title, install: { executable: b.executable } }, title, executablePath)
     )
     if (isBlacklisted) continue
 
@@ -373,17 +434,10 @@ export async function discoverInstalledGames(): Promise<GameCandidate[]> {
 
     if (apiKey) {
       try {
-        const searchResults = await SteamGridDB.searchGame(apiKey, title)
-        if (searchResults && searchResults.length > 0) {
-          const gameId = searchResults[0].id
-          const grids = await SteamGridDB.getGrids(apiKey, {
-            gameId,
-            dimensions: ['600x900', '300x450']
-          })
-          if (grids && grids.length > 0) {
-            art_square = grids[0].url
-            art_cover = grids[0].url
-          }
+        const coverData = await fetchCoverFromSteamGridDB(apiKey, title)
+        if (coverData) {
+          art_square = coverData.art_square
+          art_cover = coverData.art_cover
         }
       } catch (err) {
         logError([`Failed fetching SteamGridDB cover for ${title}:`, err])
@@ -479,6 +533,13 @@ export async function addGameToBlacklist({
     libraryStore.set('blacklist', blacklist)
     logInfo(`Directly added game to blacklist: ${title} (${executable})`)
   }
+}
+
+export async function removeGameFromBlacklist(executable: string): Promise<void> {
+  const blacklist: Array<{ title: string; executable: string }> = libraryStore.get('blacklist', [])
+  const filtered = blacklist.filter(b => b.executable.toLowerCase() !== executable.toLowerCase())
+  libraryStore.set('blacklist', filtered)
+  logInfo(`Removed game from blacklist: ${executable}`)
 }
 
 export async function clearBlacklist(): Promise<void> {

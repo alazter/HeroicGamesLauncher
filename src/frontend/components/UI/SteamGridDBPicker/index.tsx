@@ -78,9 +78,24 @@ export default function SteamGridDBPicker({
     [t, mode, dimensions, styles]
   )
 
+  const [hasApiKey, setHasApiKey] = useState(true)
+
   const searchGames = useCallback(
     async (searchQuery: string) => {
       if (!searchQuery) return
+
+      const keyExists = await window.api.steamgriddb.hasApiKey()
+      setHasApiKey(keyExists)
+      if (!keyExists) {
+        setError(
+          t(
+            'steamgriddb.error.missing-key',
+            'Chave de API do SteamGridDB não configurada. Por favor, adicione sua chave de API nas Configurações Gerais do Launcher.'
+          )
+        )
+        return
+      }
+
       setLoading(true)
       setError(null)
       setGrids([])

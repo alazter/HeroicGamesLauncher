@@ -89,7 +89,12 @@ export const Dialog: React.FC<DialogProps> = ({
             // showCloseButton used for gamepad back actions, should always be in DOM
             display: showCloseButton ? 'auto' : 'none',
             top: 8,
-            color: 'var(--text-default)'
+            color: 'var(--text-default)',
+            outline: 'none !important',
+            '&:focus, &:focus-visible, &:active': {
+              outline: 'none !important',
+              boxShadow: 'none !important'
+            }
           }}
         >
           <CloseIcon />

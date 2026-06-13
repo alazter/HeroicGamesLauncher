@@ -725,6 +725,26 @@ div[data-testid='game-card'] {
   transition: all 0.3s ease !important;
 }
 
+button:focus,
+button:focus-visible,
+.btn:focus,
+.btn:focus-visible,
+[role='button']:focus,
+[role='button']:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+.MuiButtonBase-root:focus,
+.MuiButtonBase-root:focus-visible,
+.MuiIconButton-root:focus,
+.MuiIconButton-root:focus-visible,
+.MuiInputBase-input:focus,
+.MuiInputBase-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 button:hover,
 .btn:hover,
 .GameCard:hover,

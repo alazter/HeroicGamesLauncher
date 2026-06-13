@@ -387,6 +387,7 @@ interface AsyncIPCFunctions {
   scanInstalledGames: () => Promise<{ count: number; games: string[] }>
   clearBlacklist: () => Promise<void>
   getBlacklist: () => Promise<Array<{ title: string; executable: string }>>
+  removeGameFromBlacklist: (executable: string) => Promise<void>
 }
 
 interface FrontendMessages {

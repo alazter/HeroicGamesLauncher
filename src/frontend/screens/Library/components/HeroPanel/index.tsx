@@ -263,7 +263,7 @@ export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
             justifyContent: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            padding: '10px',
+            padding: '8px',
             color: '#fff'
           }}
           onMouseOver={(e) => {
@@ -276,8 +276,8 @@ export default function HeroPanel({ game, onClose, onSettingsClick }: Props) {
           }}
           title={t('button.store', 'Store')}
         >
-          <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <StoreLogos runner={game.runner} />
+          <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <StoreLogos runner={game.runner} appName={game.app_name} />
           </div>
         </button>
 

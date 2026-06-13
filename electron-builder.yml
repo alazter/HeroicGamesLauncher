@@ -1,5 +1,9 @@
 appId: com.heroicgameslauncher.hgl
-productName: Heroic
+productName: Ghost Games Launcher
+publish:
+  provider: github
+  owner: alazter
+  repo: HeroicGamesLauncher
 files:
   - build/**/*
   - node_modules/**/*

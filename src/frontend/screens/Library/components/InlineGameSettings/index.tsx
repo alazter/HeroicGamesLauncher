@@ -266,9 +266,17 @@ export default function InlineGameSettings({ game, onClose }: Props) {
           }
           return act
         })
-        const ids = new Set(parsed.map(a => a.id))
-        const missing = DEFAULT_ACTIONS.filter(a => !ids.has(a.id))
-        return [...parsed, ...missing]
+        const validIds = new Set(DEFAULT_ACTIONS.map((a) => a.id))
+        const seenIds = new Set<string>()
+        const uniqueParsed: ActionItem[] = []
+        for (const act of parsed) {
+          if (validIds.has(act.id) && !seenIds.has(act.id)) {
+            seenIds.add(act.id)
+            uniqueParsed.push(act)
+          }
+        }
+        const missing = DEFAULT_ACTIONS.filter((a) => !seenIds.has(a.id))
+        return [...uniqueParsed, ...missing]
       } catch (err) {
         console.error('Error parsing inline settings actions:', err)
       }
@@ -587,6 +595,8 @@ export default function InlineGameSettings({ game, onClose }: Props) {
         style={{
           position: 'relative',
           cursor: 'grab',
+          width: '100%',
+          boxSizing: 'border-box',
           opacity: act.isVisible ? (draggedIndex === idx ? 0.4 : 1) : 0.25,
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: isHoveredTarget ? 'scale(1.02)' : 'scale(1)',
@@ -605,8 +615,9 @@ export default function InlineGameSettings({ game, onClose }: Props) {
         {/* Indicador de olho vetorizado perfeitamente alinhado e centralizado no canto superior direito */}
         <div style={{
           position: 'absolute',
-          top: '6px',
-          right: '8px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          right: '16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -931,7 +942,7 @@ export default function InlineGameSettings({ game, onClose }: Props) {
           height: 'calc(100% - 11px)',
           minHeight: 0,
           boxSizing: 'border-box',
-          overflowY: 'auto'
+          overflow: 'hidden'
         }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
@@ -1078,75 +1089,85 @@ export default function InlineGameSettings({ game, onClose }: Props) {
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '8px',
-              width: '32px',
-              height: '32px',
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: '18px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: 'rgba(255, 255, 255, 0.7)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              justifyContent: 'center'
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'
               e.currentTarget.style.color = '#fff'
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
-              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'
             }}
           >
-            <FontAwesomeIcon icon={faTimes} style={{ fontSize: '14px' }} />
+            <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
 
         {/* Abas e Personalizar */}
         <div style={{
           display: 'flex',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           marginBottom: '24px',
           width: '100%',
           boxSizing: 'border-box'
         }}>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <div 
-              onClick={() => setIsCustomizing(false)}
-              style={{
-                color: !isCustomizing ? '#00ffff' : 'rgba(255, 255, 255, 0.6)',
-                fontWeight: '700',
-                fontSize: '13px',
-                letterSpacing: '1px',
-                paddingBottom: '12px',
-                borderBottom: !isCustomizing ? '2px solid #00ffff' : '2px solid transparent',
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Avançado
-            </div>
-            <div 
-              onClick={() => setIsCustomizing(true)}
-              style={{
-                color: isCustomizing ? '#00ffff' : 'rgba(255, 255, 255, 0.6)',
-                fontWeight: '700',
-                fontSize: '13px',
-                letterSpacing: '1px',
-                paddingBottom: '12px',
-                borderBottom: isCustomizing ? '2px solid #00ffff' : '2px solid transparent',
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ⚙️ Organizar Seções
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCustomizing(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: !isCustomizing ? '2px solid #00e5ff' : '2px solid transparent',
+              color: !isCustomizing ? '#00e5ff' : 'rgba(255, 255, 255, 0.4)',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+            onMouseOver={(e) => {
+              if (isCustomizing) e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'
+            }}
+            onMouseOut={(e) => {
+              if (isCustomizing) e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)'
+            }}
+          >
+            Avançado
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCustomizing(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: isCustomizing ? '2px solid #00e5ff' : '2px solid transparent',
+              color: isCustomizing ? '#00e5ff' : 'rgba(255, 255, 255, 0.4)',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+            onMouseOver={(e) => {
+              if (!isCustomizing) e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'
+            }}
+            onMouseOut={(e) => {
+              if (!isCustomizing) e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)'
+            }}
+          >
+            Organizar Seções
+          </button>
         </div>
 
         {/* Área de rolagem para o conteúdo */}
@@ -1524,7 +1545,7 @@ function ActionButton({
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        padding: '12px 16px',
+        padding: '12px 48px 12px 16px',
         background: hovered ? getHoverBg() : 'rgba(255, 255, 255, 0.05)',
         border: hovered ? getHoverBorder() : '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '10px',
@@ -1542,6 +1563,9 @@ function ActionButton({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        width: '24px',
+        height: '24px',
+        flexShrink: 0,
         fontSize: '20px',
         opacity: hovered ? 1 : 0.7,
         transition: 'opacity 0.2s ease',

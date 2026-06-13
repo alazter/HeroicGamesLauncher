@@ -287,7 +287,7 @@ const GameCard = ({
         )
 
       default:
-        return <StoreLogos runner={storeOrCategory as Runner} />
+        return <StoreLogos runner={storeOrCategory as Runner} appName={appName} />
     }
   }
 

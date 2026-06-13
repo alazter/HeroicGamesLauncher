@@ -25,6 +25,8 @@
   background-color: rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), var(--alphabet-filter-container-bg-opacity, 0.08));
   border-radius: 20px;
   border: 1px solid rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), calc(var(--alphabet-filter-container-bg-opacity, 0.08) * 0.8));
+  backdrop-filter: var(--alphabet-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--alphabet-backdrop-filter, none);
   transition: all var(--alphabet-filter-transition-speed);
 }
 
@@ -33,8 +35,11 @@
 }
 
 .alphabet-filter-button {
-  background-color: rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), var(--alphabet-filter-button-bg-opacity, 0.05));
-  border: 1px solid rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), var(--alphabet-filter-button-bg-opacity, 0.05));
+  box-sizing: border-box !important;
+  background: var(--alphabet-btn-bg, rgba(255, 255, 255, 0.03)) padding-box, transparent border-box !important;
+  border: var(--alphabet-btn-border-width, 1px) solid var(--alphabet-btn-border-color, rgba(255, 255, 255, 0.08)) !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
   color: var(--alphabet-filter-button-text-color, rgba(255, 255, 255, 0.6));
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
@@ -51,19 +56,39 @@
   align-items: center;
   justify-content: center;
 
-  border-radius: var(--alphabet-filter-border-radius);
-  transition: all var(--alphabet-filter-transition-speed);
+  border-radius: var(--alphabet-btn-border-radius, 50%) !important;
+  transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   user-select: none;
   outline: none;
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: var(--alphabet-btn-backdrop-filter, blur(12px));
+  -webkit-backdrop-filter: var(--alphabet-btn-backdrop-filter, blur(12px));
 }
 
-.alphabet-filter-button:not(.alphabet-filter-button--active):not(
-    .alphabet-filter-button--disabled
-  ):hover {
-  background-color: rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), calc(var(--alphabet-filter-button-bg-opacity, 0.05) + 0.08));
-  border-color: rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), calc(var(--alphabet-filter-button-bg-opacity, 0.05) * 3 + 0.15));
-  color: var(--alphabet-filter-button-hover-text-color, #ffffff);
-  transform: scale(1.08);
+.alphabet-filter-button:hover {
+  transform: scale(1.08) !important;
+}
+
+.alphabet-filter-button::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: var(--alphabet-btn-hover-bg, rgba(255, 255, 255, 0.06)) padding-box, transparent border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease-in-out !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.alphabet-filter-button:not(.alphabet-filter-button--active):not(.alphabet-filter-button--disabled):hover::before {
+  opacity: 1 !important;
+}
+
+.alphabet-filter-button:not(.alphabet-filter-button--active):not(.alphabet-filter-button--disabled):hover {
+  color: var(--alphabet-filter-button-hover-text-color, #ffffff) !important;
 }
 
 .alphabet-filter-button:focus-visible {
@@ -71,24 +96,27 @@
 }
 
 .alphabet-filter-button--active {
-  background-color: var(--alphabet-filter-active-btn-bg, rgba(0, 255, 255, 0.08));
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--alphabet-btn-active-bg-start, rgba(20, 24, 30, 0.6)) 0%, var(--alphabet-btn-active-bg-end, rgba(230, 126, 34, 0.06)) 100%) padding-box, linear-gradient(135deg, var(--alphabet-btn-active-border-start, rgba(255, 255, 255, 0.2)) 0%, var(--alphabet-btn-active-border-end, rgba(230, 126, 34, 0.95)) 100%) border-box !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
+  color: #ffffff !important;
   font-weight: 700;
-  border: 2px solid var(--alphabet-filter-accent-color);
-  box-shadow: 0 0 12px var(--alphabet-filter-shadow-color);
-  transform: scale(1.1);
+  box-shadow: 0 0 12px var(--alphabet-btn-shadow-color, rgba(0, 255, 255, 0.3)) !important;
+  transform: scale(1.1) !important;
+  z-index: 2;
 }
 
 .alphabet-filter-button--active:hover {
-  background-color: rgba(0, 255, 255, 0.15);
-  border-color: var(--alphabet-filter-accent-hover);
-  color: #ffffff;
+  transform: scale(1.1) !important;
 }
 
 .alphabet-filter-button--disabled {
-  color: var(--alphabet-filter-button-disabled-text-color, rgba(255, 255, 255, 0.18));
-  background-color: rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), var(--alphabet-filter-button-bg-opacity, 0.05));
-  border: 1px solid rgba(var(--alphabet-filter-base-r, 255), var(--alphabet-filter-base-g, 255), var(--alphabet-filter-base-b, 255), var(--alphabet-filter-button-bg-opacity, 0.05));
+  color: var(--alphabet-filter-button-disabled-text-color, rgba(255, 255, 255, 0.18)) !important;
+  background: var(--alphabet-btn-bg, rgba(255, 255, 255, 0.03)) padding-box, transparent border-box !important;
+  border: var(--alphabet-btn-border-width, 1px) solid var(--alphabet-btn-border-color, rgba(255, 255, 255, 0.08)) !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
   cursor: default;
-  opacity: 1;
+  opacity: 0.6;
 }
