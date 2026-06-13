@@ -47,6 +47,14 @@ Compilado de todas as modificações de estilo, alinhamento, estrutura e novas f
   - Substituímos o outline padrão da barra de busca por um contorno cyan/glow neon (`#00ffff`).
   - Adicionamos regras CSS globais em `themes.scss` e `Dialog.tsx` anulando outlines residuais em inputs e botões de fechar.
 
+### 7. Rebranding e Creditação no README.md
+* **Problema:** O documento README do repositório ainda continha a marca original "Heroic Games Launcher" e faltava o novo logotipo e atribuição de créditos adequada.
+* **Solução:**
+  - Inserimos o novo logotipo de fantasma colorido (`logo.png`) no topo do arquivo ao lado do nome do software.
+  - Atualizamos as descrições e títulos para **Ghost Games Launcher**.
+  - Adicionamos uma seção específica de créditos para atribuir a autoria do projeto base ao **Heroic Games Launcher** e seus desenvolvedores/contribuidores.
+  - Atualizamos os badges de download e releases para direcionar ao repositório customizado do usuário.
+
 ---
 
 ## 🛠️ Arquivos Modificados e Criados
@@ -55,7 +63,9 @@ Compilado de todas as modificações de estilo, alinhamento, estrutura e novas f
 - [MODIFY] [electron-builder.yml](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/electron-builder.yml)
 - [MODIFY] [package.json](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/package.json)
 - [MODIFY] [index.html](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/index.html)
+- [MODIFY] [README.md](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/README.md)
 - [NEW] [TODO.md](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/TODO.md)
+- [NEW] [logo.png](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/public/logo.png)
 
 ### Backend
 - [NEW] [steamgridHelper.ts](file:///c:/Users/alazt/Documents/GitHub/Projetos/HeroicGamesLauncher/src/backend/storeManagers/sideload/steamgridHelper.ts)
